@@ -1,10 +1,16 @@
 
 import { useState } from 'react';
-import { Search } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export const SearchHero = ({ onSearch }: { onSearch: (query: string) => void }) => {
+export const SearchHero = ({ 
+  onSearch, 
+  isSearching 
+}: { 
+  onSearch: (query: string) => void;
+  isSearching?: boolean;
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -18,7 +24,7 @@ export const SearchHero = ({ onSearch }: { onSearch: (query: string) => void }) 
         Discover Ethical Practices
       </h1>
       <p className="text-lg text-muted-foreground text-center mb-8 max-w-xl">
-        Search for companies and content creators to learn about their ethical practices and impact
+        Use AI to search for companies and content creators to learn about their ethical practices
       </p>
       
       <form onSubmit={handleSubmit} className="search-container">
@@ -29,13 +35,22 @@ export const SearchHero = ({ onSearch }: { onSearch: (query: string) => void }) 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full h-12 pl-12 pr-4 glass-card"
+            disabled={isSearching}
           />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
           <Button 
             type="submit"
             className="absolute right-2 top-1/2 transform -translate-y-1/2"
+            disabled={isSearching}
           >
-            Search
+            {isSearching ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Searching...
+              </>
+            ) : (
+              'Search'
+            )}
           </Button>
         </div>
       </form>

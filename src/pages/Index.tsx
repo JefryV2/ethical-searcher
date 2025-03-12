@@ -1,7 +1,8 @@
-
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
+import { searchWithAI } from '@/services/aiSearch';
+import { useToast } from "@/components/ui/use-toast";
 
 // Temporary mock data for demonstration
 const mockResults = [
@@ -33,20 +34,38 @@ const mockResults = [
 
 const Index = () => {
   const [searchResults, setSearchResults] = useState(mockResults);
+  const [isSearching, setIsSearching] = useState(false);
+  const { toast } = useToast();
 
-  const handleSearch = (query: string) => {
-    // For now, just filter the mock data
-    const filtered = mockResults.filter(result => 
-      result.name.toLowerCase().includes(query.toLowerCase()) ||
-      result.description.toLowerCase().includes(query.toLowerCase())
-    );
-    setSearchResults(filtered);
+  const handleSearch = async (query: string) => {
+    try {
+      setIsSearching(true);
+      const results = await searchWithAI(query, mockResults);
+      setSearchResults(results);
+      
+      if (results.length === 0) {
+        toast({
+          title: "No results found",
+          description: "Try searching with different keywords",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search failed",
+        description: "Please try again",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/20 to-background">
       <main className="container mx-auto">
-        <SearchHero onSearch={handleSearch} />
+        <SearchHero onSearch={handleSearch} isSearching={isSearching} />
         <SearchResults results={searchResults} />
       </main>
     </div>
