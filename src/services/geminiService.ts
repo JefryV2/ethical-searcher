@@ -27,8 +27,8 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
   try {
     const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following data. Consider names, descriptions, ethical practices, and categories. Return ONLY the IDs of relevant results as a JSON array of strings, nothing else. Here's the data: ${JSON.stringify(data)}`;
 
-    // Updated API endpoint to match the correct Gemini API URL structure
-    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent', {
+    // Updated API endpoint to use the gemini-2.0-flash model
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

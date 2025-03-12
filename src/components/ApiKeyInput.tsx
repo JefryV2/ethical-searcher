@@ -39,7 +39,7 @@ export const ApiKeyInput = () => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground mb-2">
             Enter your Gemini API key to enable AI-powered search. 
-            Make sure you have access to the Gemini API and use a key for the gemini-1.0-pro model.
+            Make sure you have access to the Gemini API and use a key for the gemini-2.0-flash model.
           </p>
           <div className="flex gap-2">
             <Input
