@@ -27,7 +27,8 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
   try {
     const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following data. Consider names, descriptions, ethical practices, and categories. Return ONLY the IDs of relevant results as a JSON array of strings, nothing else. Here's the data: ${JSON.stringify(data)}`;
 
-    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent', {
+    // Updated API endpoint to match the correct Gemini API URL structure
+    const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -49,6 +50,8 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
     });
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API error details:", errorData);
       throw new Error(`Gemini API error: ${response.status}`);
     }
 
@@ -56,6 +59,7 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
     
     // Extract the text from the response
     const text = responseData.candidates[0].content.parts[0].text;
+    console.log("Gemini response text:", text);
     
     // Try to parse the response as a JSON array of IDs
     let ids: string[] = [];
@@ -73,6 +77,8 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
       // Fallback to simple text parsing - look for IDs in the text
       ids = text.match(/['"]?\d+['"]?/g)?.map(id => id.replace(/['"]/g, '')) || [];
     }
+    
+    console.log("Extracted IDs:", ids);
     
     // Filter the data to only include items with IDs in the response
     return data.filter(item => ids.includes(item.id));
