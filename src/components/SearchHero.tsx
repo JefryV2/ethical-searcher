@@ -13,7 +13,7 @@ export const SearchHero = ({ onSearch }: { onSearch: (query: string) => void }) 
   };
 
   return (
-    <div className="min-h-[50vh] flex flex-col items-center justify-center px-4 fade-in">
+    <div className="min-h-[50vh] flex flex-col items-center justify-center px-4 fade-in-element">
       <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">
         Discover Ethical Practices
       </h1>
