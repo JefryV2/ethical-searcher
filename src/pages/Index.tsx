@@ -1,7 +1,10 @@
+
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
 import { searchWithAI } from '@/services/aiSearch';
+import { searchWithGemini, getGeminiApiKey } from '@/services/geminiService';
+import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { useToast } from "@/components/ui/use-toast";
 
 // Temporary mock data for demonstration
@@ -40,7 +43,15 @@ const Index = () => {
   const handleSearch = async (query: string) => {
     try {
       setIsSearching(true);
-      const results = await searchWithAI(query, mockResults);
+      
+      let results;
+      // Use Gemini if API key is set, otherwise fallback to local search
+      if (getGeminiApiKey()) {
+        results = await searchWithGemini(query, mockResults);
+      } else {
+        results = await searchWithAI(query, mockResults);
+      }
+      
       setSearchResults(results);
       
       if (results.length === 0) {
@@ -65,6 +76,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/20 to-background">
       <main className="container mx-auto">
+        <ApiKeyInput />
         <SearchHero onSearch={handleSearch} isSearching={isSearching} />
         <SearchResults results={searchResults} />
       </main>
