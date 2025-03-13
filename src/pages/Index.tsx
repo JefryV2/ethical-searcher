@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
@@ -59,12 +60,19 @@ const Index = () => {
       if (getGeminiApiKey()) {
         console.log("Using Gemini search");
         results = await searchWithGemini(query, mockResults);
+        console.log("Search results from Gemini:", results);
       } else {
         console.log("Using local AI search");
         results = await searchWithAI(query, mockResults);
+        console.log("Search results from local AI:", results);
       }
       
-      console.log("Search results:", results);
+      // Ensure results is always an array
+      if (!Array.isArray(results)) {
+        console.error("Search returned non-array result:", results);
+        results = [];
+      }
+      
       setSearchResults(results);
       setHasSearched(true);
       
@@ -83,7 +91,8 @@ const Index = () => {
         description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
-      // Keep the current results but mark that we've searched
+      // Reset results to empty array on error
+      setSearchResults([]);
       setHasSearched(true);
     } finally {
       setIsSearching(false);

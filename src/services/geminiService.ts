@@ -32,7 +32,8 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
     If the query mentions anything related to technology, innovation, environment, or ethics, please include those results.
     Return the IDs of ALL potentially relevant results as a JSON array of strings, nothing else.
     If nothing seems to match at all, return ALL IDs to let the user see all options.
-    For example: ["1", "2", "3"]. Here's the data: ${JSON.stringify(data)}`;
+    Format your response ONLY as a JSON array like: ["1", "2", "3"] with no other text.
+    Here's the data: ${JSON.stringify(data)}`;
 
     console.log("Sending search request to Gemini API with query:", query);
     
@@ -49,7 +50,7 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
           }]
         }],
         generationConfig: {
-          temperature: 0.4, // Increased slightly to encourage more inclusive results
+          temperature: 0.4, 
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
@@ -151,10 +152,10 @@ function performFallbackSearch(query: string, data: SearchResult[]): SearchResul
   
   console.log("Fallback search found", results.length, "results with scores");
   
-  // If still no results, return all data as a last resort (limit to 10 max)
+  // If still no results, return all data as a last resort
   if (results.length === 0) {
     console.log("No matching results in fallback search, returning all data");
-    return data.slice(0, 10);
+    return data.slice(0, 10); // Return up to 10 items max
   }
   
   return results;

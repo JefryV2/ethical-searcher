@@ -14,7 +14,9 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results }: SearchResultsProps) => {
-  if (results.length === 0) {
+  console.log("SearchResults component received results:", results);
+  
+  if (!results || results.length === 0) {
     return (
       <div className="w-full max-w-6xl mx-auto px-4 py-8 text-center">
         <div className="bg-secondary/20 rounded-lg p-8 max-w-lg mx-auto">
@@ -39,7 +41,7 @@ export const SearchResults = ({ results }: SearchResultsProps) => {
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
-      <h2 className="text-2xl font-semibold mb-6">Search Results</h2>
+      <h2 className="text-2xl font-semibold mb-6">Search Results ({results.length})</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {results.map((result) => (
           <EntityCard key={result.id} {...result} />
