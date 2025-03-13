@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
@@ -7,31 +6,57 @@ import { searchWithGemini, getGeminiApiKey } from '@/services/geminiService';
 import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { useToast } from "@/components/ui/use-toast";
 
-// Temporary mock data for demonstration
+// Enhanced mock data with more ethical information
 const mockResults = [
   {
     id: '1',
     name: 'Eco Solutions Inc',
     type: 'company' as const,
     description: 'Leading sustainable technology solutions provider with focus on renewable energy.',
-    ethicalScore: 8.5,
-    categories: ['Environmental', 'Fair Labor', 'Innovation']
+    ethicalScore: 85, // Now on a 0-100 scale
+    categories: ['Environmental', 'Fair Labor', 'Innovation'],
+    certifications: ['B Corp Certified', 'ISO 14001', 'Carbon Neutral'],
+    controversies: [
+      {
+        title: 'Supply Chain Concerns (2019)',
+        description: 'Minor controversy regarding raw material suppliers in Southeast Asia.',
+        date: '2019-06-15',
+        source_url: 'https://example.com/news/ecosolutions-supply'
+      }
+    ],
+    website: 'https://ecosolutions.example.com',
+    ethical_analysis: 'Strong environmental practices with industry-leading sustainability initiatives. Working to improve supply chain transparency.'
   },
   {
     id: '2',
     name: 'Sarah Green',
     type: 'creator' as const,
     description: 'Environmental activist and content creator focusing on sustainable living.',
-    ethicalScore: 9.2,
-    categories: ['Education', 'Sustainability', 'Community']
+    ethicalScore: 92,
+    categories: ['Education', 'Sustainability', 'Community'],
+    certifications: ['Climate Reality Leader', 'Sustainable Content Creator Badge'],
+    controversies: [],
+    website: 'https://sarahgreen.example.com',
+    ethical_analysis: 'Consistently promotes ethical practices and transparency in sponsorships. Only partners with verified sustainable brands.'
   },
   {
     id: '3',
     name: 'Tech Ethics Co',
     type: 'company' as const,
     description: 'Technology company prioritizing ethical AI development and data privacy.',
-    ethicalScore: 7.8,
-    categories: ['Privacy', 'Innovation', 'Transparency']
+    ethicalScore: 78,
+    categories: ['Privacy', 'Innovation', 'Transparency'],
+    certifications: ['Fair AI Certification', 'Data Privacy Shield'],
+    controversies: [
+      {
+        title: 'Data Handling Incident',
+        description: 'Minor data leak affecting a small number of users, promptly addressed.',
+        date: '2021-03-22',
+        source_url: 'https://example.com/news/techethics-incident'
+      }
+    ],
+    website: 'https://techethics.example.com',
+    ethical_analysis: 'Good data protection practices overall with transparent incident reporting. Continuous improvement in security protocols.'
   }
 ];
 
@@ -56,8 +81,18 @@ const Index = () => {
       console.log("Starting search with query:", query);
       
       let results;
-      // Use Gemini if API key is set, otherwise fallback to local search
-      if (getGeminiApiKey()) {
+      // Simple name matching for direct company/creator name searches
+      const directNameMatch = mockResults.filter(item => 
+        item.name.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      // If we have a direct name match, prioritize those results
+      if (directNameMatch.length > 0) {
+        console.log("Found direct name matches:", directNameMatch.length);
+        results = directNameMatch;
+      } 
+      // Otherwise use Gemini or local search
+      else if (getGeminiApiKey()) {
         console.log("Using Gemini search");
         results = await searchWithGemini(query, mockResults);
         console.log("Search results from Gemini:", results);

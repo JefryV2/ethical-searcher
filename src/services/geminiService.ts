@@ -29,7 +29,7 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
     const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following data. 
     Be very generous with matches - consider partial matches in names, descriptions, and categories.
     Look for any connections between the query and the companies or creators.
-    If the query mentions anything related to technology, innovation, environment, or ethics, please include those results.
+    If the query mentions anything related to technology, innovation, environment, ethics, or specific company names, please include those results.
     Return the IDs of ALL potentially relevant results as a JSON array of strings, nothing else.
     If nothing seems to match at all, return ALL IDs to let the user see all options.
     Format your response ONLY as a JSON array like: ["1", "2", "3"] with no other text.
@@ -50,7 +50,7 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
           }]
         }],
         generationConfig: {
-          temperature: 0.4, 
+          temperature: 0.5, // Slightly increased to make matching more generous
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
@@ -115,6 +115,16 @@ function performFallbackSearch(query: string, data: SearchResult[]): SearchResul
   console.log("Performing fallback search with query:", query);
   const searchTerms = query.toLowerCase().split(/\s+/);
   
+  // First try direct name matching
+  const directNameMatches = data.filter(item => 
+    item.name.toLowerCase().includes(query.toLowerCase())
+  );
+  
+  if (directNameMatches.length > 0) {
+    console.log("Found direct name matches:", directNameMatches.length);
+    return directNameMatches;
+  }
+  
   // Score each result based on how well it matches the search terms
   const scoredResults = data.map(item => {
     let score = 0;
@@ -126,19 +136,19 @@ function performFallbackSearch(query: string, data: SearchResult[]): SearchResul
     // Check each search term
     for (const term of searchTerms) {
       // Direct matches in name (highest priority)
-      if (nameLower.includes(term)) score += 10;
+      if (nameLower.includes(term)) score += 15;
       
       // Matches in description
-      if (descLower.includes(term)) score += 5;
+      if (descLower.includes(term)) score += 7;
       
       // Matches in categories
-      if (categoriesLower.some(cat => cat.includes(term))) score += 7;
+      if (categoriesLower.some(cat => cat.includes(term))) score += 10;
       
       // Matches in entity type
-      if (typeLower.includes(term)) score += 3;
+      if (typeLower.includes(term)) score += 5;
       
       // Partial word matches (lower priority but still relevant)
-      if (nameLower.split(/\s+/).some(word => word.includes(term) || term.includes(word))) score += 2;
+      if (nameLower.split(/\s+/).some(word => word.includes(term) || term.includes(word))) score += 3;
     }
     
     return { item, score };
