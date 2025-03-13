@@ -1,5 +1,6 @@
 
 import { EntityCard } from './EntityCard';
+import { Search } from 'lucide-react';
 
 interface SearchResultsProps {
   results: Array<{
@@ -16,10 +17,22 @@ export const SearchResults = ({ results }: SearchResultsProps) => {
   if (results.length === 0) {
     return (
       <div className="w-full max-w-6xl mx-auto px-4 py-8 text-center">
-        <h2 className="text-2xl font-semibold mb-4">No Results Found</h2>
-        <p className="text-muted-foreground">
-          Try searching with different keywords or broader terms
-        </p>
+        <div className="bg-secondary/20 rounded-lg p-8 max-w-lg mx-auto">
+          <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-2xl font-semibold mb-4">No Results Found</h2>
+          <p className="text-muted-foreground mb-4">
+            We couldn't find any companies or creators matching your search criteria.
+          </p>
+          <div className="text-sm text-muted-foreground mt-4">
+            <h3 className="font-medium mb-2">Suggestions:</h3>
+            <ul className="list-disc list-inside text-left">
+              <li>Check your spelling</li>
+              <li>Try more general keywords</li>
+              <li>Search for related terms</li>
+              <li>Try searching for categories like "Environmental" or "Innovation"</li>
+            </ul>
+          </div>
+        </div>
       </div>
     );
   }

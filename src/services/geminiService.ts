@@ -25,11 +25,17 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
   }
 
   try {
-    const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following data. Consider names, descriptions, ethical practices, and categories. Return ONLY the IDs of relevant results as a JSON array of strings, nothing else. For example: ["1", "2"]. Here's the data: ${JSON.stringify(data)}`;
+    // Enhanced prompt that explicitly asks the model to think more broadly
+    const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following data. 
+    Be very generous with matches - consider partial matches in names, descriptions, and categories.
+    Look for any connections between the query and the companies or creators.
+    If the query mentions anything related to technology, innovation, environment, or ethics, please include those results.
+    Return the IDs of ALL potentially relevant results as a JSON array of strings, nothing else.
+    If nothing seems to match at all, return ALL IDs to let the user see all options.
+    For example: ["1", "2", "3"]. Here's the data: ${JSON.stringify(data)}`;
 
     console.log("Sending search request to Gemini API with query:", query);
     
-    // Updated API endpoint to use the gemini-2.0-flash model
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent', {
       method: 'POST',
       headers: {
@@ -43,7 +49,7 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
           }]
         }],
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.4, // Increased slightly to encourage more inclusive results
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
@@ -86,24 +92,70 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
     }
     
     // Filter the data to only include items with IDs in the response
-    const filteredResults = data.filter(item => ids.includes(item.id));
-    console.log("Final filtered results:", filteredResults);
+    let filteredResults = data.filter(item => ids.includes(item.id));
+    console.log("Filtered results based on IDs:", filteredResults);
     
-    // If no results found after parsing, return all results as a fallback
-    if (filteredResults.length === 0 && ids.length === 0) {
-      console.log("No results found after parsing and no IDs extracted. Using basic text matching as fallback");
-      // Simple fallback: Find items that might match the query text
-      const lowercaseQuery = query.toLowerCase();
-      return data.filter(item => {
-        return item.name.toLowerCase().includes(lowercaseQuery) ||
-               item.description.toLowerCase().includes(lowercaseQuery) ||
-               item.categories.some(cat => cat.toLowerCase().includes(lowercaseQuery));
-      });
+    // If no results found after parsing, use improved fallback search
+    if (filteredResults.length === 0) {
+      console.log("No results found from Gemini API, using enhanced fallback search");
+      filteredResults = performFallbackSearch(query, data);
     }
     
     return filteredResults;
   } catch (error) {
     console.error("Error in Gemini search:", error);
-    throw error;
+    // Return results from fallback search rather than throwing
+    return performFallbackSearch(query, data);
   }
 };
+
+// Improved fallback search function with better matching logic
+function performFallbackSearch(query: string, data: SearchResult[]): SearchResult[] {
+  console.log("Performing fallback search with query:", query);
+  const searchTerms = query.toLowerCase().split(/\s+/);
+  
+  // Score each result based on how well it matches the search terms
+  const scoredResults = data.map(item => {
+    let score = 0;
+    const nameLower = item.name.toLowerCase();
+    const descLower = item.description.toLowerCase();
+    const categoriesLower = item.categories.map(c => c.toLowerCase());
+    const typeLower = item.type.toLowerCase();
+    
+    // Check each search term
+    for (const term of searchTerms) {
+      // Direct matches in name (highest priority)
+      if (nameLower.includes(term)) score += 10;
+      
+      // Matches in description
+      if (descLower.includes(term)) score += 5;
+      
+      // Matches in categories
+      if (categoriesLower.some(cat => cat.includes(term))) score += 7;
+      
+      // Matches in entity type
+      if (typeLower.includes(term)) score += 3;
+      
+      // Partial word matches (lower priority but still relevant)
+      if (nameLower.split(/\s+/).some(word => word.includes(term) || term.includes(word))) score += 2;
+    }
+    
+    return { item, score };
+  });
+  
+  // Sort by score (descending) and filter items with a score above 0
+  const results = scoredResults
+    .filter(result => result.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(result => result.item);
+  
+  console.log("Fallback search found", results.length, "results with scores");
+  
+  // If still no results, return all data as a last resort (limit to 10 max)
+  if (results.length === 0) {
+    console.log("No matching results in fallback search, returning all data");
+    return data.slice(0, 10);
+  }
+  
+  return results;
+}

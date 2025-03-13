@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
@@ -36,7 +35,7 @@ const mockResults = [
 ];
 
 const Index = () => {
-  const [searchResults, setSearchResults] = useState(mockResults);
+  const [searchResults, setSearchResults] = useState<typeof mockResults>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const { toast } = useToast();
@@ -69,9 +68,10 @@ const Index = () => {
       setSearchResults(results);
       setHasSearched(true);
       
+      // Only show toast for no results if we got an empty array
       if (results.length === 0) {
         toast({
-          title: "No results found",
+          title: "No matches found",
           description: "Try searching with different keywords",
           variant: "default",
         });
@@ -83,8 +83,8 @@ const Index = () => {
         description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
-      // Reset to show all results when search fails
-      setSearchResults(mockResults);
+      // Keep the current results but mark that we've searched
+      setHasSearched(true);
     } finally {
       setIsSearching(false);
     }
@@ -95,7 +95,7 @@ const Index = () => {
       <main className="container mx-auto">
         <ApiKeyInput />
         <SearchHero onSearch={handleSearch} isSearching={isSearching} />
-        {(hasSearched || searchResults.length > 0) && (
+        {hasSearched && (
           <SearchResults results={searchResults} />
         )}
       </main>
