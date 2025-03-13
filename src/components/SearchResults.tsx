@@ -14,7 +14,14 @@ interface SearchResultsProps {
 
 export const SearchResults = ({ results }: SearchResultsProps) => {
   if (results.length === 0) {
-    return null;
+    return (
+      <div className="w-full max-w-6xl mx-auto px-4 py-8 text-center">
+        <h2 className="text-2xl font-semibold mb-4">No Results Found</h2>
+        <p className="text-muted-foreground">
+          Try searching with different keywords or broader terms
+        </p>
+      </div>
+    );
   }
 
   return (

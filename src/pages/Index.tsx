@@ -38,21 +38,36 @@ const mockResults = [
 const Index = () => {
   const [searchResults, setSearchResults] = useState(mockResults);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const { toast } = useToast();
 
   const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      toast({
+        title: "Empty search",
+        description: "Please enter a search term",
+        variant: "default",
+      });
+      return;
+    }
+    
     try {
       setIsSearching(true);
+      console.log("Starting search with query:", query);
       
       let results;
       // Use Gemini if API key is set, otherwise fallback to local search
       if (getGeminiApiKey()) {
+        console.log("Using Gemini search");
         results = await searchWithGemini(query, mockResults);
       } else {
+        console.log("Using local AI search");
         results = await searchWithAI(query, mockResults);
       }
       
+      console.log("Search results:", results);
       setSearchResults(results);
+      setHasSearched(true);
       
       if (results.length === 0) {
         toast({
@@ -65,9 +80,11 @@ const Index = () => {
       console.error('Search error:', error);
       toast({
         title: "Search failed",
-        description: "Please try again",
+        description: error instanceof Error ? error.message : "Please try again",
         variant: "destructive",
       });
+      // Reset to show all results when search fails
+      setSearchResults(mockResults);
     } finally {
       setIsSearching(false);
     }
@@ -78,7 +95,9 @@ const Index = () => {
       <main className="container mx-auto">
         <ApiKeyInput />
         <SearchHero onSearch={handleSearch} isSearching={isSearching} />
-        <SearchResults results={searchResults} />
+        {(hasSearched || searchResults.length > 0) && (
+          <SearchResults results={searchResults} />
+        )}
       </main>
     </div>
   );
