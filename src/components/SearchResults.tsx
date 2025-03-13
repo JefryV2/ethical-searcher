@@ -1,16 +1,10 @@
 
 import { EntityCard } from './EntityCard';
 import { Search } from 'lucide-react';
+import { EntityData } from '@/services/ethicalDataService';
 
 interface SearchResultsProps {
-  results: Array<{
-    id: string;
-    name: string;
-    type: 'company' | 'creator';
-    description: string;
-    ethicalScore: number;
-    categories: string[];
-  }>;
+  results: EntityData[];
 }
 
 export const SearchResults = ({ results }: SearchResultsProps) => {
@@ -31,7 +25,7 @@ export const SearchResults = ({ results }: SearchResultsProps) => {
               <li>Check your spelling</li>
               <li>Try more general keywords</li>
               <li>Search for related terms</li>
-              <li>Try searching for categories like "Environmental" or "Innovation"</li>
+              <li>Try searching for categories like "Environmental" or "Technology"</li>
             </ul>
           </div>
         </div>

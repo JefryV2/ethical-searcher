@@ -1,12 +1,6 @@
 
-interface SearchResult {
-  id: string;
-  name: string;
-  type: 'company' | 'creator';
-  description: string;
-  ethicalScore: number;
-  categories: string[];
-}
+import { EntityData } from './ethicalDataService';
+import { toast } from "@/components/ui/use-toast";
 
 // Store API key in memory (not localStorage for security reasons)
 let apiKey: string | null = null;
@@ -19,21 +13,34 @@ export const getGeminiApiKey = () => {
   return apiKey;
 };
 
-export const searchWithGemini = async (query: string, data: SearchResult[]): Promise<SearchResult[]> => {
+export const searchWithGemini = async (query: string, data: EntityData[] = []): Promise<EntityData[]> => {
   if (!apiKey) {
     throw new Error("Gemini API key not set");
   }
 
   try {
+    // Import mock data from our ethicalDataService for now
+    // In a real implementation with a full backend, this would come from the API
+    const { mockEthicalData } = await import('./ethicalDataService').then(module => ({ 
+      mockEthicalData: (module as any).mockEthicalData 
+    }));
+    
     // Enhanced prompt that explicitly asks the model to think more broadly
-    const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following data. 
+    const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following ethical business data. 
     Be very generous with matches - consider partial matches in names, descriptions, and categories.
-    Look for any connections between the query and the companies or creators.
-    If the query mentions anything related to technology, innovation, environment, ethics, or specific company names, please include those results.
-    Return the IDs of ALL potentially relevant results as a JSON array of strings, nothing else.
-    If nothing seems to match at all, return ALL IDs to let the user see all options.
+    Look for connections between the query and companies/creators, especially regarding:
+    - Environmental impact
+    - Labor practices
+    - Social responsibility
+    - Corporate governance
+    - Sustainability initiatives
+    - Historical controversies
+    - Ethical certifications
+    
+    Return the IDs of ALL potentially relevant results as a JSON array of strings.
     Format your response ONLY as a JSON array like: ["1", "2", "3"] with no other text.
-    Here's the data: ${JSON.stringify(data)}`;
+    
+    Here's the data: ${JSON.stringify(mockEthicalData)}`;
 
     console.log("Sending search request to Gemini API with query:", query);
     
@@ -50,7 +57,7 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
           }]
         }],
         generationConfig: {
-          temperature: 0.5, // Slightly increased to make matching more generous
+          temperature: 0.6, // Slightly increased to make matching more generous
           topK: 40,
           topP: 0.95,
           maxOutputTokens: 1024,
@@ -93,25 +100,29 @@ export const searchWithGemini = async (query: string, data: SearchResult[]): Pro
     }
     
     // Filter the data to only include items with IDs in the response
-    let filteredResults = data.filter(item => ids.includes(item.id));
+    let filteredResults = mockEthicalData.filter(item => ids.includes(item.id));
     console.log("Filtered results based on IDs:", filteredResults);
     
     // If no results found after parsing, use improved fallback search
     if (filteredResults.length === 0) {
       console.log("No results found from Gemini API, using enhanced fallback search");
-      filteredResults = performFallbackSearch(query, data);
+      filteredResults = performFallbackSearch(query, mockEthicalData);
     }
     
     return filteredResults;
   } catch (error) {
     console.error("Error in Gemini search:", error);
-    // Return results from fallback search rather than throwing
-    return performFallbackSearch(query, data);
+    toast({
+      title: "Gemini search error",
+      description: error instanceof Error ? error.message : "Failed to search with AI",
+      variant: "destructive",
+    });
+    return [];
   }
 };
 
 // Improved fallback search function with better matching logic
-function performFallbackSearch(query: string, data: SearchResult[]): SearchResult[] {
+function performFallbackSearch(query: string, data: EntityData[]): EntityData[] {
   console.log("Performing fallback search with query:", query);
   const searchTerms = query.toLowerCase().split(/\s+/);
   
@@ -162,10 +173,10 @@ function performFallbackSearch(query: string, data: SearchResult[]): SearchResul
   
   console.log("Fallback search found", results.length, "results with scores");
   
-  // If still no results, return all data as a last resort
+  // If still no results, return empty array
   if (results.length === 0) {
-    console.log("No matching results in fallback search, returning all data");
-    return data.slice(0, 10); // Return up to 10 items max
+    console.log("No matching results in fallback search");
+    return [];
   }
   
   return results;
