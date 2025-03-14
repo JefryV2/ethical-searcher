@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
-import { fetchEntityByName, EntityData, mockEthicalData } from '@/services/ethicalDataService';
+import { fetchEntityByName, EntityData } from '@/services/ethicalDataService';
 import { searchWithGemini, getGeminiApiKey } from '@/services/geminiService';
 import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { useToast } from "@/components/ui/use-toast";
@@ -11,6 +10,7 @@ const Index = () => {
   const [searchResults, setSearchResults] = useState<EntityData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
   const { toast } = useToast();
 
   const handleSearch = async (query: string) => {
@@ -25,65 +25,54 @@ const Index = () => {
     
     try {
       setIsSearching(true);
+      setIsUsingFallbackData(false);
       console.log("Starting search with query:", query);
       
-      // Direct search by name using our data service
-      const directResults = await fetchEntityByName(query);
+      // Try to fetch real data first
+      let results: EntityData[] = [];
       
-      if (directResults.length > 0) {
-        console.log(`Found ${directResults.length} direct matches for "${query}"`);
-        setSearchResults(directResults);
-      } 
-      // If no direct matches and Gemini API key is set, try AI-powered search
-      else if (getGeminiApiKey()) {
-        console.log("No direct matches, trying Gemini search");
-        try {
-          const geminiResults = await searchWithGemini(query, []);
-          
-          if (Array.isArray(geminiResults) && geminiResults.length > 0) {
-            console.log(`Gemini search found ${geminiResults.length} results`);
-            setSearchResults(geminiResults);
-          } else {
-            console.log("No results from Gemini search, using simple fallback");
-            // Simple fallback if all else fails
-            const simpleResults = performSimpleFallback(query);
-            setSearchResults(simpleResults);
-            
-            if (simpleResults.length === 0) {
-              toast({
-                title: "No matches found",
-                description: "Try searching with different keywords",
-                variant: "default",
-              });
-            }
-          }
-        } catch (error) {
-          console.error("Gemini search error:", error);
-          // If Gemini fails, use simple fallback
-          const simpleResults = performSimpleFallback(query);
-          setSearchResults(simpleResults);
-          
-          if (simpleResults.length === 0) {
-            toast({
-              title: "Search error",
-              description: "Using basic search instead. Try different keywords.",
-              variant: "default",
-            });
-          }
-        }
-      } else {
-        console.log("No direct matches and no Gemini API key set, using simple fallback");
-        // Simple fallback if no API key
-        const simpleResults = performSimpleFallback(query);
-        setSearchResults(simpleResults);
+      try {
+        // Direct search by name using our data service (now tries to use real API)
+        results = await fetchEntityByName(query);
         
-        if (simpleResults.length === 0) {
-          toast({
-            title: "No matches found",
-            description: "Try searching with different keywords or add a Gemini API key for better results",
-            variant: "default",
-          });
+        if (results.length > 0) {
+          console.log(`Found ${results.length} matches for "${query}"`);
+          setSearchResults(results);
+        } 
+        // If no direct matches and Gemini API key is set, try AI-powered search
+        else if (getGeminiApiKey()) {
+          console.log("No direct matches, trying Gemini search");
+          try {
+            const geminiResults = await searchWithGemini(query, []);
+            
+            if (Array.isArray(geminiResults) && geminiResults.length > 0) {
+              console.log(`Gemini search found ${geminiResults.length} results`);
+              setSearchResults(geminiResults);
+            } else {
+              throw new Error("No Gemini results");
+            }
+          } catch (error) {
+            console.error("Gemini search error:", error);
+            throw error; // Let the outer catch handle this
+          }
+        } else {
+          throw new Error("No results found");
         }
+      } catch (error) {
+        console.log("Error in primary search methods, using fallback", error);
+        setIsUsingFallbackData(true);
+        
+        // If we're here, both direct API and Gemini failed, show a toast
+        toast({
+          title: "Using sample data",
+          description: "We couldn't connect to the real data source at this time",
+          variant: "default",
+        });
+        
+        // Perform a simple search through our mock data
+        const searchTerms = query.toLowerCase().split(/\s+/);
+        const fallbackResults = performSimpleFallback(query);
+        setSearchResults(fallbackResults);
       }
       
       setHasSearched(true);
@@ -139,7 +128,16 @@ const Index = () => {
         <ApiKeyInput />
         <SearchHero onSearch={handleSearch} isSearching={isSearching} />
         {hasSearched && (
-          <SearchResults results={searchResults} />
+          <>
+            {isUsingFallbackData && (
+              <div className="w-full max-w-6xl mx-auto px-4 mb-4">
+                <p className="text-amber-500 text-sm bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
+                  Currently showing sample data. Real API connection unavailable.
+                </p>
+              </div>
+            )}
+            <SearchResults results={searchResults} />
+          </>
         )}
       </main>
     </div>
