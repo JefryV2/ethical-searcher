@@ -40,7 +40,7 @@ export const fetchEntityByName = async (name: string): Promise<EntityData[]> => 
     }).catch(error => {
       console.error("Network error:", error);
       // If the real API fails, fallback to the mock data
-      return { ok: false, status: 500 };
+      return { ok: false, status: 500 } as Response;
     });
     
     if (!response.ok) {

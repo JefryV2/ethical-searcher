@@ -1,7 +1,6 @@
 
-import { EntityData } from './ethicalDataService';
+import { EntityData, mockEthicalData } from './ethicalDataService';
 import { toast } from "@/components/ui/use-toast";
-import { mockEthicalData } from './ethicalDataService';
 
 // Store API key in memory (not localStorage for security reasons)
 let apiKey: string | null = null;
@@ -14,30 +13,56 @@ export const getGeminiApiKey = () => {
   return apiKey;
 };
 
-export const searchWithGemini = async (query: string, data: EntityData[] = []): Promise<EntityData[]> => {
+export const searchWithGemini = async (query: string): Promise<EntityData[]> => {
   if (!apiKey) {
     throw new Error("Gemini API key not set");
   }
 
   try {
-    // Enhanced prompt that explicitly asks the model to think more broadly
-    const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following ethical business data. 
-    Be very generous with matches - consider partial matches in names, descriptions, and categories.
-    Look for connections between the query and companies/creators, especially regarding:
-    - Environmental impact
-    - Labor practices
-    - Social responsibility
-    - Corporate governance
-    - Sustainability initiatives
-    - Historical controversies
-    - Ethical certifications
-    
-    Return the IDs of ALL potentially relevant results as a JSON array of strings.
-    Format your response ONLY as a JSON array like: ["1", "2", "3"] with no other text.
-    
-    Here's the data: ${JSON.stringify(mockEthicalData)}`;
+    // Enhanced prompt that explicitly asks for real data search
+    const prompt = `You are a helpful search assistant specializing in ethical companies and creators.
 
-    console.log("Sending search request to Gemini API with query:", query);
+Given the search query "${query}", search for real companies or creators that match this query.
+Look for relevant ethical information about:
+- Company or creator name (exact or similar to "${query}")
+- Their industry or field
+- Environmental practices and impact
+- Labor practices and social responsibility
+- Ethical certifications and standards
+- Corporate governance and transparency
+- Any controversies or ethical concerns
+
+For EACH entity you find, return:
+1. Name (required)
+2. Type: "company" or "creator" (required)
+3. Description: A brief summary (required)
+4. Ethical score: A number from 0-100 based on ethical practices (required)
+5. Categories: Industry, field, or relevance tags (required)
+6. Certifications: List of any ethical/environmental certifications 
+7. Controversies: Any ethical concerns or issues, each with a title and description
+8. Website: Official website URL if available
+9. Ethical analysis: A brief ethical assessment
+
+Format your response as a JSON array of objects, like:
+[
+  {
+    "id": "1",
+    "name": "Company Name",
+    "type": "company",
+    "description": "Brief description",
+    "ethicalScore": 85,
+    "categories": ["Category1", "Category2"],
+    "certifications": ["Certification1"],
+    "controversies": [{"title": "Issue", "description": "Details"}],
+    "website": "https://example.com",
+    "ethical_analysis": "Ethical assessment"
+  }
+]
+
+Focus on providing REAL data about actual companies and creators. If you cannot find any real data about "${query}", respond with an empty array [].
+`;
+
+    console.log("Sending search request to Gemini API for real data with query:", query);
     
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent', {
       method: 'POST',
@@ -52,10 +77,10 @@ export const searchWithGemini = async (query: string, data: EntityData[] = []): 
           }]
         }],
         generationConfig: {
-          temperature: 0.6, // Slightly increased to make matching more generous
+          temperature: 0.2, // Lower temperature for more factual responses
           topK: 40,
           topP: 0.95,
-          maxOutputTokens: 1024,
+          maxOutputTokens: 2048, // Increased for more detailed responses
         }
       })
     });
@@ -73,38 +98,29 @@ export const searchWithGemini = async (query: string, data: EntityData[] = []): 
     const text = responseData.candidates[0].content.parts[0].text;
     console.log("Gemini response text:", text);
     
-    // Try to parse the response as a JSON array of IDs
-    let ids: string[] = [];
+    // Try to parse the JSON response
     try {
-      // First attempt: Look for JSON array pattern in the response
-      const match = text.match(/\[.*?\]/s);
+      // Look for JSON array pattern in the response
+      const match = text.match(/\[\s*\{.*\}\s*\]/s);
       if (match) {
-        ids = JSON.parse(match[0]);
-        console.log("Successfully parsed JSON array:", ids);
+        const entities = JSON.parse(match[0]);
+        console.log("Successfully parsed JSON array of entities:", entities);
+        
+        // Ensure each entity has an id
+        const entitiesWithIds = entities.map((entity: any, index: number) => ({
+          ...entity,
+          id: entity.id || String(index + 1)
+        }));
+        
+        return entitiesWithIds;
       } else {
-        // Second attempt: Split by commas if it's just a comma-separated list
-        ids = text.split(',').map(id => id.trim().replace(/"/g, ''));
-        console.log("Parsed comma-separated list:", ids);
+        console.log("No valid JSON found in response");
+        return [];
       }
     } catch (e) {
-      console.error("Failed to parse Gemini response:", e);
-      // Fallback: Simple text parsing - look for IDs in the text
-      const idMatches = text.match(/['"]?\d+['"]?/g);
-      ids = idMatches?.map(id => id.replace(/['"]/g, '')) || [];
-      console.log("Extracted IDs using fallback method:", ids);
+      console.error("Failed to parse Gemini response as JSON:", e);
+      return [];
     }
-    
-    // Filter the data to only include items with IDs in the response
-    let filteredResults = mockEthicalData.filter(item => ids.includes(item.id));
-    console.log("Filtered results based on IDs:", filteredResults);
-    
-    // If no results found after parsing, use improved fallback search
-    if (filteredResults.length === 0) {
-      console.log("No results found from Gemini API, using enhanced fallback search");
-      filteredResults = performFallbackSearch(query, mockEthicalData);
-    }
-    
-    return filteredResults;
   } catch (error) {
     console.error("Error in Gemini search:", error);
     toast({
@@ -116,7 +132,7 @@ export const searchWithGemini = async (query: string, data: EntityData[] = []): 
   }
 };
 
-// Improved fallback search function with better matching logic
+// Improved fallback search function if needed
 function performFallbackSearch(query: string, data: EntityData[]): EntityData[] {
   console.log("Performing fallback search with query:", query);
   const searchTerms = query.toLowerCase().split(/\s+/);
