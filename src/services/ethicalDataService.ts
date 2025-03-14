@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 
 export interface Controversy {
@@ -61,7 +60,7 @@ export const fetchEntityByName = async (name: string): Promise<EntityData[]> => 
 
 // Extended mock data that simulates API responses
 // In a real implementation, this would be replaced with actual API calls
-const mockEthicalData: EntityData[] = [
+export const mockEthicalData: EntityData[] = [
   {
     id: "1",
     name: "EcoTech Solutions",

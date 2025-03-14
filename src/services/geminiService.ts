@@ -1,6 +1,7 @@
 
 import { EntityData } from './ethicalDataService';
 import { toast } from "@/components/ui/use-toast";
+import { mockEthicalData } from './ethicalDataService';
 
 // Store API key in memory (not localStorage for security reasons)
 let apiKey: string | null = null;
@@ -19,12 +20,6 @@ export const searchWithGemini = async (query: string, data: EntityData[] = []): 
   }
 
   try {
-    // Import mock data from our ethicalDataService for now
-    // In a real implementation with a full backend, this would come from the API
-    const { mockEthicalData } = await import('./ethicalDataService').then(module => ({ 
-      mockEthicalData: (module as any).mockEthicalData 
-    }));
-    
     // Enhanced prompt that explicitly asks the model to think more broadly
     const prompt = `Given the search query "${query}", find the most relevant companies or creators from the following ethical business data. 
     Be very generous with matches - consider partial matches in names, descriptions, and categories.
