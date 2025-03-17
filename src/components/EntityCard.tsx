@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Globe, User, ShieldCheck, AlertTriangle, Award, Info } from 'lucide-react';
+import { Globe, User, ShieldCheck, AlertTriangle, Award, Info, ExternalLink } from 'lucide-react';
 import { 
   Tooltip,
   TooltipContent,
@@ -124,17 +124,20 @@ export const EntityCard = ({
               <div key={index} className="bg-amber-500/10 p-2 rounded-md text-xs">
                 <p className="font-medium">{controversy.title}</p>
                 <p className="text-muted-foreground">{controversy.description}</p>
-                {controversy.date && <p className="text-xs opacity-70">{new Date(controversy.date).toLocaleDateString()}</p>}
-                {controversy.source_url && (
-                  <a 
-                    href={controversy.source_url} 
-                    className="text-primary text-xs hover:underline block mt-1"
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                  >
-                    Source
-                  </a>
-                )}
+                <div className="flex items-center justify-between mt-1">
+                  {controversy.date && <p className="text-xs opacity-70">{new Date(controversy.date).toLocaleDateString()}</p>}
+                  {controversy.source_url && (
+                    <a 
+                      href={controversy.source_url} 
+                      className="flex items-center gap-1 text-primary text-xs hover:underline"
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <span>View Source</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
               </div>
             ))}
           </div>
