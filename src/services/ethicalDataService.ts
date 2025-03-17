@@ -1,4 +1,3 @@
-
 import { toast } from "@/components/ui/use-toast";
 
 export interface Controversy {
@@ -6,6 +5,24 @@ export interface Controversy {
   description: string;
   date?: string;
   source_url?: string;
+}
+
+export interface Disclosure {
+  title: string;
+  description: string;
+  link?: string;
+}
+
+export interface Sponsorship {
+  company: string;
+  details: string;
+  period?: string;
+}
+
+export interface CharitableWork {
+  organization: string;
+  contribution: string;
+  year?: string;
 }
 
 export interface EntityData {
@@ -19,6 +36,9 @@ export interface EntityData {
   controversies?: Controversy[];
   website?: string;
   ethical_analysis?: string;
+  disclosures?: Disclosure[];
+  sponsorships?: Sponsorship[];
+  charitable_work?: CharitableWork[];
 }
 
 // Real API endpoint for ethical company data
@@ -71,7 +91,10 @@ export const fetchEntityByName = async (name: string): Promise<EntityData[]> => 
       certifications: item.certifications,
       controversies: item.controversies,
       website: item.website,
-      ethical_analysis: item.ethical_analysis || item.summary
+      ethical_analysis: item.ethical_analysis || item.summary,
+      disclosures: item.disclosures,
+      sponsorships: item.sponsorships,
+      charitable_work: item.charitable_work
     }));
     
     console.log(`Processed ${mappedResults.length} API results`);
@@ -109,7 +132,7 @@ export const fetchEntityByName = async (name: string): Promise<EntityData[]> => 
 };
 
 // Mock data to use as fallback when the API fails
-// This data is kept the same as before
+// This data is kept the same as before, but with enhanced creator information
 export const mockEthicalData: EntityData[] = [
   {
     id: "1",
@@ -171,7 +194,43 @@ export const mockEthicalData: EntityData[] = [
     certifications: ["Climate Reality Leadership Corps", "Environmental Educator Certification"],
     controversies: [],
     website: "https://mayarodriguez.earth",
-    ethical_analysis: "Consistently transparent about partnerships and sponsorships. Only promotes products verified to meet strict environmental standards. Donates 15% of income to environmental causes."
+    ethical_analysis: "Consistently transparent about partnerships and sponsorships. Only promotes products verified to meet strict environmental standards. Donates 15% of income to environmental causes.",
+    disclosures: [
+      {
+        title: "Income Sources",
+        description: "Maya discloses that 60% of her income comes from sponsored content, 25% from digital courses, and 15% from affiliate marketing.",
+        link: "https://mayarodriguez.earth/transparency"
+      },
+      {
+        title: "Content Review Policy",
+        description: "All featured products must pass a 15-point sustainability checklist before being considered for promotion.",
+        link: "https://mayarodriguez.earth/review-policy"
+      }
+    ],
+    sponsorships: [
+      {
+        company: "EcoVital Products",
+        details: "Recurring sponsorship for sustainable home goods content series",
+        period: "2022-Present"
+      },
+      {
+        company: "GreenTech Solutions",
+        details: "One-time sponsored review of home solar installation process",
+        period: "July 2023"
+      }
+    ],
+    charitable_work: [
+      {
+        organization: "Ocean Cleanup Initiative",
+        contribution: "Donated $25,000 and organized community cleanup events",
+        year: "2023"
+      },
+      {
+        organization: "Climate Education Fund",
+        contribution: "Provided free workshops to 15 underserved schools",
+        year: "2022-2023"
+      }
+    ]
   },
   {
     id: "5",
@@ -202,7 +261,43 @@ export const mockEthicalData: EntityData[] = [
       }
     ],
     website: "https://jameschen.tech",
-    ethical_analysis: "Generally strong ethical practices with detailed transparency reports. Addressed disclosure issues promptly and has since maintained exemplary transparency standards."
+    ethical_analysis: "Generally strong ethical practices with detailed transparency reports. Addressed disclosure issues promptly and has since maintained exemplary transparency standards.",
+    disclosures: [
+      {
+        title: "Monthly Transparency Reports",
+        description: "James publishes comprehensive reports detailing all sponsorships, gifted products, and affiliate earnings.",
+        link: "https://jameschen.tech/transparency"
+      },
+      {
+        title: "Review Methodology",
+        description: "Detailed explanation of how products are tested and evaluated, with a focus on repairability and longevity.",
+        link: "https://jameschen.tech/review-methodology"
+      }
+    ],
+    sponsorships: [
+      {
+        company: "Fairphone",
+        details: "Recurring sponsorship for sustainable tech content",
+        period: "2022-Present"
+      },
+      {
+        company: "Framework Laptop",
+        details: "Sponsored content series on repairable technology",
+        period: "2023"
+      }
+    ],
+    charitable_work: [
+      {
+        organization: "Digital Divide Initiative",
+        contribution: "Donated 150 refurbished computers to schools in underserved communities",
+        year: "2022"
+      },
+      {
+        organization: "E-Waste Recycling Program",
+        contribution: "Organized collection events processing over 5 tons of electronic waste",
+        year: "2023"
+      }
+    ]
   },
   {
     id: "7",
@@ -226,7 +321,43 @@ export const mockEthicalData: EntityData[] = [
     certifications: ["Certified Financial Planner", "ESG Investment Advisor"],
     controversies: [],
     website: "https://ethicalfinancewithale.com",
-    ethical_analysis: "Transparent about commission structures and income sources. Only recommends financial products meeting strict environmental and social criteria. Provides free educational content for underserved communities."
+    ethical_analysis: "Transparent about commission structures and income sources. Only recommends financial products meeting strict environmental and social criteria. Provides free educational content for underserved communities.",
+    disclosures: [
+      {
+        title: "Revenue Structure",
+        description: "Alex details that 40% of income comes from course sales, 30% from affiliate partnerships, 20% from consulting, and 10% from speaking engagements.",
+        link: "https://ethicalfinancewithale.com/business-model"
+      },
+      {
+        title: "Affiliate Disclosure",
+        description: "Comprehensive list of all financial relationships with companies and products mentioned in content.",
+        link: "https://ethicalfinancewithale.com/affiliates"
+      }
+    ],
+    sponsorships: [
+      {
+        company: "Ethical Investment Fund",
+        details: "Educational content series on ESG investing principles",
+        period: "2022-2023"
+      },
+      {
+        company: "Community Development Credit Union",
+        details: "Sponsored workshops on financial literacy",
+        period: "2023"
+      }
+    ],
+    charitable_work: [
+      {
+        organization: "Financial Literacy Foundation",
+        contribution: "Provides free financial education to 1,000+ individuals annually",
+        year: "2021-Present"
+      },
+      {
+        organization: "Community Investment Trust",
+        contribution: "Volunteer financial advisor for neighborhood development projects",
+        year: "2022-Present"
+      }
+    ]
   },
   {
     id: "9",
