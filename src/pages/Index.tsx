@@ -1,6 +1,8 @@
+
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
+import { TopRatedEntities } from '@/components/TopRatedEntities';
 import { fetchEntityByName, EntityData, mockEthicalData } from '@/services/ethicalDataService';
 import { searchWithGemini, getGeminiApiKey } from '@/services/geminiService';
 import { ApiKeyInput } from '@/components/ApiKeyInput';
@@ -146,6 +148,11 @@ const Index = () => {
       <main className="container mx-auto">
         <ApiKeyInput />
         <SearchHero onSearch={handleSearch} isSearching={isSearching} />
+        
+        {!hasSearched && (
+          <TopRatedEntities />
+        )}
+        
         {hasSearched && (
           <>
             {isUsingFallbackData && (

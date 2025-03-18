@@ -1,0 +1,76 @@
+
+import { useState } from 'react';
+import { Link } from "react-router-dom";
+import { EntityData, mockEthicalData } from '@/services/ethicalDataService';
+import { EntityCard } from '@/components/EntityCard';
+import { Star, Award, Trophy } from 'lucide-react';
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
+} from "@/components/ui/carousel";
+
+export const TopRatedEntities = () => {
+  // Get top 5 companies and creators by score
+  const topCompanies = [...mockEthicalData]
+    .filter(entity => entity.type === 'company')
+    .sort((a, b) => b.ethicalScore - a.ethicalScore)
+    .slice(0, 5);
+    
+  const topCreators = [...mockEthicalData]
+    .filter(entity => entity.type === 'creator')
+    .sort((a, b) => b.ethicalScore - a.ethicalScore)
+    .slice(0, 5);
+
+  return (
+    <div className="w-full max-w-6xl mx-auto py-10 px-4 fade-in-element">
+      <div className="mb-12">
+        <div className="flex items-center gap-2 mb-6">
+          <Trophy className="text-primary h-6 w-6" />
+          <h2 className="text-2xl font-bold">Top Ethical Companies</h2>
+        </div>
+        
+        <Carousel className="w-full">
+          <CarouselContent>
+            {topCompanies.map((company) => (
+              <CarouselItem key={company.id} className="md:basis-1/2 lg:basis-1/3">
+                <Link to={`/entity/${company.id}`} className="block h-full">
+                  <EntityCard {...company} />
+                </Link>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-end gap-2 mt-4">
+            <CarouselPrevious className="relative inset-auto -left-0 translate-y-0" />
+            <CarouselNext className="relative inset-auto -right-0 translate-y-0" />
+          </div>
+        </Carousel>
+      </div>
+
+      <div>
+        <div className="flex items-center gap-2 mb-6">
+          <Star className="text-primary h-6 w-6" />
+          <h2 className="text-2xl font-bold">Top Ethical Content Creators</h2>
+        </div>
+        
+        <Carousel className="w-full">
+          <CarouselContent>
+            {topCreators.map((creator) => (
+              <CarouselItem key={creator.id} className="md:basis-1/2 lg:basis-1/3">
+                <Link to={`/entity/${creator.id}`} className="block h-full">
+                  <EntityCard {...creator} />
+                </Link>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-end gap-2 mt-4">
+            <CarouselPrevious className="relative inset-auto -left-0 translate-y-0" />
+            <CarouselNext className="relative inset-auto -right-0 translate-y-0" />
+          </div>
+        </Carousel>
+      </div>
+    </div>
+  );
+};
