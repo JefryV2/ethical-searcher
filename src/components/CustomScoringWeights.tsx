@@ -61,7 +61,10 @@ export const CustomScoringWeights = ({
   savedWeights 
 }: ScoringWeightsProps) => {
   const { toast } = useToast();
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => {
+    // Open by default if there are no saved weights yet
+    return !savedWeights || Object.keys(savedWeights).length === 0;
+  });
   const [metrics, setMetrics] = useState<MetricWeight[]>([]);
   const [totalWeight, setTotalWeight] = useState(100);
   const [useCustomWeights, setUseCustomWeights] = useState(false);
@@ -209,11 +212,14 @@ export const CustomScoringWeights = ({
       // Reset to default if turning off custom weights
       onSaveWeights({});
       handleReset();
+    } else {
+      // Open the collapsible when enabling custom weights
+      setIsOpen(true);
     }
   };
   
   return (
-    <Card className="shadow-md">
+    <Card className="shadow-md border-primary/20 transition-all hover:border-primary/40">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -227,10 +233,11 @@ export const CustomScoringWeights = ({
                   checked={useCustomWeights} 
                   onCheckedChange={handleCustomWeightsToggle}
                   id="custom-weights"
+                  className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
                 />
               </FormControl>
               <div className="space-y-1 leading-none">
-                <FormLabel htmlFor="custom-weights">
+                <FormLabel htmlFor="custom-weights" className="font-medium">
                   Use Custom Weights
                 </FormLabel>
               </div>
@@ -244,7 +251,10 @@ export const CustomScoringWeights = ({
       
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="flex w-full justify-between p-4">
+          <Button 
+            variant="ghost" 
+            className="flex w-full justify-between p-4 text-primary hover:bg-primary/5"
+          >
             <span>{isOpen ? 'Hide Weights' : 'Customize Weights'}</span>
             {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
@@ -272,27 +282,35 @@ export const CustomScoringWeights = ({
                       step={5}
                       onValueChange={(value) => handleWeightChange(metric.id, value)}
                       disabled={!useCustomWeights}
+                      className={useCustomWeights ? "" : "opacity-50"}
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">{metric.description}</p>
                 </div>
               ))}
               
-              <div className={`flex items-center justify-between py-2 ${
-                totalWeight !== 100 ? 'text-destructive font-medium' : 'text-primary font-medium'
+              <div className={`flex items-center justify-between py-2 font-medium ${
+                totalWeight !== 100 ? 'text-destructive' : 'text-primary'
               }`}>
                 <span>Total:</span>
                 <span>{totalWeight}%</span>
               </div>
+              
+              {totalWeight !== 100 && (
+                <p className="text-sm text-destructive mb-2">
+                  Your weights must total exactly 100% to save your preferences.
+                </p>
+              )}
             </div>
           </CardContent>
           
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex justify-between gap-4 border-t p-4">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={handleReset}
               disabled={!useCustomWeights}
+              className="flex-1"
             >
               <RotateCcw className="mr-2 h-4 w-4" />
               Reset to Default
@@ -302,6 +320,7 @@ export const CustomScoringWeights = ({
               size="sm" 
               onClick={handleSave}
               disabled={!useCustomWeights || totalWeight !== 100}
+              className="flex-1 bg-primary"
             >
               <Save className="mr-2 h-4 w-4" />
               Save Custom Weights
