@@ -8,7 +8,12 @@ import {
   Building, 
   User, 
   Lightbulb, 
-  Sparkles 
+  Sparkles,
+  GlobeLock,
+  HeartHandshake,
+  Megaphone,
+  BookOpen,
+  Recycle
 } from 'lucide-react';
 
 interface ScoringExplanationProps {
@@ -16,6 +21,114 @@ interface ScoringExplanationProps {
 }
 
 export const ScoringExplanation = ({ entityType }: ScoringExplanationProps) => {
+  // Different weighting based on entity type
+  const getMetrics = () => {
+    if (entityType === 'company') {
+      return [
+        {
+          icon: <Leaf className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />,
+          title: "Environmental Impact (30%)",
+          description: "Carbon footprint, resource usage, waste management, sustainability initiatives, and commitment to climate goals.",
+          submetrics: [
+            "Carbon emissions reduction (10%)",
+            "Sustainable resource management (8%)",
+            "Waste reduction and circular economy initiatives (7%)",
+            "Environmental policy enforcement (5%)"
+          ]
+        },
+        {
+          icon: <Users className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />,
+          title: "Social Responsibility (30%)",
+          description: "Labor practices, diversity and inclusion, community engagement, and human rights throughout supply chain.",
+          submetrics: [
+            "Fair labor practices and living wages (8%)",
+            "Diversity, equity & inclusion initiatives (7%)",
+            "Supply chain ethics and transparency (8%)",
+            "Community investment and impact (7%)"
+          ]
+        },
+        {
+          icon: <Scale className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />,
+          title: "Governance (25%)",
+          description: "Corporate structure, transparency, ethics policies, anti-corruption measures, and compliance with regulations.",
+          submetrics: [
+            "Leadership diversity and compensation ratios (5%)",
+            "Anti-corruption policies and implementation (7%)",
+            "Stakeholder engagement practices (5%)",
+            "Transparency in reporting and communication (8%)"
+          ]
+        },
+        {
+          icon: <Sparkles className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />,
+          title: "Innovation & Impact (15%)",
+          description: "Positive societal contributions, ethical innovation, product safety, and addressing global challenges.",
+          submetrics: [
+            "Ethical product development (5%)",
+            "Societal benefit of business model (5%)",
+            "Research & development focused on sustainability (5%)"
+          ]
+        }
+      ];
+    } else {
+      // Creator-specific metrics
+      return [
+        {
+          icon: <Megaphone className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />,
+          title: "Transparency & Disclosure (35%)",
+          description: "Openness about sponsorships, income sources, conflicts of interest, and affiliate relationships.",
+          submetrics: [
+            "Sponsorship disclosure compliance (12%)", 
+            "Financial relationship transparency (10%)",
+            "Affiliate link disclosure (8%)",
+            "Product receipt disclosure (5%)"
+          ]
+        },
+        {
+          icon: <BookOpen className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />,
+          title: "Content Integrity (25%)",
+          description: "Accuracy of information, research quality, correction of errors, and balance in presentation.",
+          submetrics: [
+            "Factual accuracy and sourcing (10%)",
+            "Editorial independence (8%)",
+            "Correction policy implementation (7%)"
+          ]
+        },
+        {
+          icon: <HeartHandshake className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />,
+          title: "Social Impact (20%)",
+          description: "Advocacy, charitable work, positive influence, and community building initiatives.",
+          submetrics: [
+            "Charitable giving and volunteering (8%)",
+            "Platform use for social good (7%)",
+            "Community building and support (5%)"
+          ]
+        },
+        {
+          icon: <Recycle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />,
+          title: "Environmental Advocacy (10%)",
+          description: "Promotion of sustainable practices, climate awareness, and personal environmental footprint.",
+          submetrics: [
+            "Promotion of sustainable products (4%)",
+            "Personal sustainability practices (3%)",
+            "Environmental education efforts (3%)"
+          ]
+        },
+        {
+          icon: <GlobeLock className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />,
+          title: "Audience Responsibility (10%)",
+          description: "Audience respect, data privacy, moderation policies, and handling of sensitive topics.",
+          submetrics: [
+            "Audience data privacy practices (4%)",
+            "Comment moderation and community guidelines (3%)",
+            "Responsible handling of sensitive topics (3%)"
+          ]
+        }
+      ];
+    }
+  };
+
+  const metrics = getMetrics();
+
   return (
     <div className="space-y-6">
       <div className="prose dark:prose-invert max-w-none">
@@ -26,6 +139,7 @@ export const ScoringExplanation = ({ entityType }: ScoringExplanationProps) => {
         <p className="text-muted-foreground">
           Our ethics scoring system is transparent and based on verifiable data sources.
           Scores range from 0-100, with higher scores indicating better ethical practices.
+          Methodology is specifically tailored to {entityType === 'company' ? 'corporate' : 'content creator'} ethics.
         </p>
       </div>
       
@@ -42,46 +156,28 @@ export const ScoringExplanation = ({ entityType }: ScoringExplanationProps) => {
             </h3>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <Leaf className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Environmental Impact (30%)</p>
-                <p className="text-sm text-muted-foreground">
-                  Carbon footprint, resource usage, waste management, and sustainability initiatives.
-                </p>
+          <div className="space-y-5">
+            {metrics.map((metric, index) => (
+              <div key={index} className="space-y-3">
+                <div className="flex items-start gap-3">
+                  {metric.icon}
+                  <div>
+                    <p className="font-medium">{metric.title}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {metric.description}
+                    </p>
+                  </div>
+                </div>
+                <div className="pl-8 space-y-1">
+                  {metric.submetrics.map((submetric, subIndex) => (
+                    <p key={subIndex} className="text-xs text-muted-foreground flex items-center gap-1">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70"></span>
+                      {submetric}
+                    </p>
+                  ))}
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <Users className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Social Responsibility (30%)</p>
-                <p className="text-sm text-muted-foreground">
-                  Labor practices, diversity and inclusion, community engagement, and human rights.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <Scale className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Governance (25%)</p>
-                <p className="text-sm text-muted-foreground">
-                  Corporate structure, transparency, ethics policies, and compliance with regulations.
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium">Innovation & Impact (15%)</p>
-                <p className="text-sm text-muted-foreground">
-                  Positive societal contributions, ethical innovation, and addressing global challenges.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </Card>
         
@@ -94,31 +190,52 @@ export const ScoringExplanation = ({ entityType }: ScoringExplanationProps) => {
           <div className="space-y-4 text-sm">
             <p>
               Our scoring system uses a weighted algorithm that evaluates multiple factors in each category. 
-              Data is collected from:
+              We update scores quarterly based on new information from:
             </p>
             
             <ul className="space-y-2 list-disc pl-5">
-              <li>Public corporate disclosures and sustainability reports</li>
-              <li>Independent audits and certifications</li>
-              <li>News sources and investigative journalism</li>
-              <li>NGO and watchdog organization reports</li>
-              <li>Academic and industry research</li>
-              <li>Social media analysis and public sentiment</li>
+              {entityType === 'company' ? (
+                <>
+                  <li>Public corporate disclosures and sustainability reports</li>
+                  <li>Independent audits and certifications</li>
+                  <li>News sources and investigative journalism</li>
+                  <li>NGO and watchdog organization reports</li>
+                  <li>Academic and industry research</li>
+                  <li>Social media analysis and public sentiment</li>
+                </>
+              ) : (
+                <>
+                  <li>Content analysis across platforms</li>
+                  <li>Disclosure and transparency audits</li>
+                  <li>Fact-checking organization reports</li>
+                  <li>Public disclosure statements</li>
+                  <li>Community feedback and advocacy groups</li>
+                  <li>Independent ethics reviews</li>
+                </>
+              )}
             </ul>
             
             <p className="font-medium pt-2">Score Interpretation:</p>
-            <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="grid grid-cols-5 gap-1 text-center text-xs">
               <div className="bg-red-100 dark:bg-red-950/30 p-2 rounded-md">
-                <p className="font-medium text-red-600 dark:text-red-400">0-49</p>
-                <p className="text-xs">Needs Improvement</p>
+                <p className="font-medium text-red-600 dark:text-red-400">0-29</p>
+                <p>Poor</p>
+              </div>
+              <div className="bg-orange-100 dark:bg-orange-950/30 p-2 rounded-md">
+                <p className="font-medium text-orange-600 dark:text-orange-400">30-49</p>
+                <p>Needs Work</p>
               </div>
               <div className="bg-amber-100 dark:bg-amber-950/30 p-2 rounded-md">
                 <p className="font-medium text-amber-600 dark:text-amber-400">50-69</p>
-                <p className="text-xs">Moderate</p>
+                <p>Moderate</p>
+              </div>
+              <div className="bg-lime-100 dark:bg-lime-950/30 p-2 rounded-md">
+                <p className="font-medium text-lime-600 dark:text-lime-400">70-89</p>
+                <p>Strong</p>
               </div>
               <div className="bg-green-100 dark:bg-green-950/30 p-2 rounded-md">
-                <p className="font-medium text-green-600 dark:text-green-400">70-100</p>
-                <p className="text-xs">Ethical Leader</p>
+                <p className="font-medium text-green-600 dark:text-green-400">90-100</p>
+                <p>Exemplary</p>
               </div>
             </div>
             

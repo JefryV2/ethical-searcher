@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from "react-router-dom";
 import { EntityData, mockEthicalData } from '@/services/ethicalDataService';
 import { EntityCard } from '@/components/EntityCard';
-import { Star, Award, Trophy } from 'lucide-react';
+import { Star, Award, Trophy, Info } from 'lucide-react';
 import { 
   Carousel,
   CarouselContent,
@@ -11,6 +11,12 @@ import {
   CarouselNext,
   CarouselPrevious
 } from "@/components/ui/carousel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export const TopRatedEntities = () => {
   // Get top 5 companies and creators by score
@@ -30,6 +36,17 @@ export const TopRatedEntities = () => {
         <div className="flex items-center gap-2 mb-6">
           <Trophy className="text-primary h-6 w-6" />
           <h2 className="text-2xl font-bold">Top Ethical Companies</h2>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Companies are scored on Environmental Impact (30%), Social Responsibility (30%), 
+                Governance (25%), and Innovation & Impact (15%)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
         <Carousel className="w-full">
@@ -53,6 +70,17 @@ export const TopRatedEntities = () => {
         <div className="flex items-center gap-2 mb-6">
           <Star className="text-primary h-6 w-6" />
           <h2 className="text-2xl font-bold">Top Ethical Content Creators</h2>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>Creators are scored on Transparency (35%), Content Integrity (25%), 
+                Social Impact (20%), Environmental Advocacy (10%), and Audience Responsibility (10%)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
         
         <Carousel className="w-full">
