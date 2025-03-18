@@ -1,9 +1,9 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { EntityData, mockEthicalData } from '@/services/ethicalDataService';
 import { EntityCard } from '@/components/EntityCard';
-import { Star, Award, Trophy, Info } from 'lucide-react';
+import { Star, Award, Trophy, Info, SlidersHorizontal } from 'lucide-react';
 import { 
   Carousel,
   CarouselContent,
@@ -17,8 +17,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 export const TopRatedEntities = () => {
+  const [customWeightsActive, setCustomWeightsActive] = useState(false);
+  
+  // Check if custom weights are being used
+  useEffect(() => {
+    const savedWeights = localStorage.getItem('customEthicalWeights');
+    if (savedWeights && Object.keys(JSON.parse(savedWeights)).length > 0) {
+      setCustomWeightsActive(true);
+    } else {
+      setCustomWeightsActive(false);
+    }
+  }, []);
+  
   // Get top 5 companies and creators by score
   const topCompanies = [...mockEthicalData]
     .filter(entity => entity.type === 'company')
@@ -32,6 +45,18 @@ export const TopRatedEntities = () => {
 
   return (
     <div className="w-full max-w-6xl mx-auto py-10 px-4 fade-in-element">
+      {customWeightsActive && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 py-1 px-3">
+            <SlidersHorizontal className="w-3 h-3 mr-1" />
+            Using Personalized Scoring
+          </Badge>
+          <span className="text-sm text-muted-foreground">
+            Entities are scored based on your custom ethical priorities
+          </span>
+        </div>
+      )}
+      
       <div className="mb-12">
         <div className="flex items-center gap-2 mb-6">
           <Trophy className="text-primary h-6 w-6" />

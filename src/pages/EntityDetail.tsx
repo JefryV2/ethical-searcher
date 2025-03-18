@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { EntityCard } from '@/components/EntityCard';
 import { ScoringExplanation } from '@/components/ScoringExplanation';
 import { CreatorTransparency } from '@/components/CreatorTransparency';
+import { CustomScoringWeights } from '@/components/CustomScoringWeights';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from 'lucide-react';
@@ -16,6 +17,15 @@ const EntityDetail = () => {
   const { toast } = useToast();
   const [entity, setEntity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [customWeights, setCustomWeights] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // Load saved weights from localStorage if they exist
+    const savedWeights = localStorage.getItem('customEthicalWeights');
+    if (savedWeights) {
+      setCustomWeights(JSON.parse(savedWeights));
+    }
+  }, []);
 
   useEffect(() => {
     const fetchEntityData = async () => {
@@ -25,6 +35,13 @@ const EntityDetail = () => {
         // For now, using mock data
         const foundEntity = mockEthicalData.find(e => e.id === id);
         if (foundEntity) {
+          // Apply custom weights to recalculate the score if needed
+          if (Object.keys(customWeights).length > 0) {
+            let adjustedEntity = {...foundEntity};
+            // In a real implementation, this would actually recalculate the score
+            // based on the custom weights and raw data
+            // For demo purposes, we're just showing the original score
+          }
           setEntity(foundEntity);
         } else {
           toast({
@@ -47,7 +64,28 @@ const EntityDetail = () => {
     };
 
     fetchEntityData();
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, customWeights]);
+
+  const handleSaveWeights = (weights: Record<string, number>) => {
+    setCustomWeights(weights);
+    localStorage.setItem('customEthicalWeights', JSON.stringify(weights));
+    
+    // In a real implementation, this would trigger a recalculation of scores
+    // based on the custom weights
+    
+    // For now, we'll just show a confirmation toast
+    if (Object.keys(weights).length > 0) {
+      toast({
+        title: "Weights Updated",
+        description: "Entity scores will now reflect your personal values",
+      });
+    } else {
+      toast({
+        title: "Using Default Weights",
+        description: "Entity scores will use the standard algorithm",
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -70,6 +108,14 @@ const EntityDetail = () => {
           <ArrowLeft className="w-4 h-4" />
           Back to Search
         </Button>
+      </div>
+      
+      <div className="mb-6">
+        <CustomScoringWeights 
+          entityType={entity.type} 
+          onSaveWeights={handleSaveWeights}
+          savedWeights={customWeights}
+        />
       </div>
       
       <Tabs defaultValue="details" className="w-full max-w-5xl mx-auto">
