@@ -11,6 +11,7 @@ import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { mockEthicalData } from '@/services/ethicalDataService';
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EntityDetail = () => {
   const { id } = useParams();
@@ -20,12 +21,19 @@ const EntityDetail = () => {
   const [loading, setLoading] = useState(true);
   const [customWeights, setCustomWeights] = useState<Record<string, number>>({});
   const [showWeightsInfo, setShowWeightsInfo] = useState(true);
+  const [showCustomWeights, setShowCustomWeights] = useState(false);
 
   useEffect(() => {
     // Load saved weights from localStorage if they exist
     const savedWeights = localStorage.getItem('customEthicalWeights');
     if (savedWeights) {
-      setCustomWeights(JSON.parse(savedWeights));
+      try {
+        setCustomWeights(JSON.parse(savedWeights));
+      } catch (error) {
+        console.error("Error parsing saved weights:", error);
+        // If there's an error parsing the weights, clear them
+        localStorage.removeItem('customEthicalWeights');
+      }
     }
   }, []);
 
@@ -54,6 +62,7 @@ const EntityDetail = () => {
           navigate('/');
         }
       } catch (error) {
+        console.error("Error loading entity:", error);
         toast({
           title: "Error loading entity",
           description: "Please try again later",
@@ -90,17 +99,69 @@ const EntityDetail = () => {
 
     // Automatically hide the info alert after weights are saved
     setShowWeightsInfo(false);
+    // Hide the weights panel after saving
+    setShowCustomWeights(false);
+  };
+
+  const toggleCustomWeights = () => {
+    setShowCustomWeights(!showCustomWeights);
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 flex items-center justify-center min-h-[50vh]">
-        <div className="animate-pulse text-lg">Loading entity data...</div>
+      <div className="container mx-auto py-8">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Search
+          </Button>
+        </div>
+        
+        <div className="mb-6">
+          <Skeleton className="h-12 w-full mb-4" />
+        </div>
+        
+        <div className="max-w-5xl mx-auto">
+          <Skeleton className="h-8 w-full mb-4" />
+          <Skeleton className="h-[400px] w-full rounded-lg" />
+        </div>
       </div>
     );
   }
 
-  if (!entity) return null;
+  if (!entity) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Search
+          </Button>
+        </div>
+        
+        <Alert variant="destructive" className="mb-6">
+          <AlertTitle>Entity Not Found</AlertTitle>
+          <AlertDescription>
+            We couldn't find the entity you're looking for. Please try searching again.
+          </AlertDescription>
+          <Button 
+            onClick={() => navigate('/')}
+            className="mt-4"
+          >
+            Return to Search
+          </Button>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -134,11 +195,24 @@ const EntityDetail = () => {
       )}
       
       <div className="mb-6">
-        <CustomScoringWeights 
-          entityType={entity.type} 
-          onSaveWeights={handleSaveWeights}
-          savedWeights={customWeights}
-        />
+        <Button
+          variant="outline"
+          className="mb-4 flex items-center gap-2"
+          onClick={toggleCustomWeights}
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          {showCustomWeights ? "Hide Custom Weights" : "Customize Ethical Weights"}
+        </Button>
+        
+        {showCustomWeights && (
+          <div className="p-4 border rounded-lg bg-card">
+            <CustomScoringWeights 
+              entityType={entity.type} 
+              onSaveWeights={handleSaveWeights}
+              savedWeights={customWeights}
+            />
+          </div>
+        )}
       </div>
       
       <Tabs defaultValue="details" className="w-full max-w-5xl mx-auto">
