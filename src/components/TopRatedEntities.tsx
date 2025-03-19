@@ -78,8 +78,14 @@ export const TopRatedEntities = () => {
           <CarouselContent>
             {topCompanies.map((company) => (
               <CarouselItem key={company.id} className="md:basis-1/2 lg:basis-1/3">
-                <Link to={`/entity/${company.id}`} className="block h-full">
-                  <EntityCard {...company} />
+                <Link 
+                  to={`/entity/${company.id}`} 
+                  className="block h-full"
+                  onClick={() => console.log("Clicked top company with ID:", company.id, "Name:", company.name)}
+                >
+                  <div className="h-full">
+                    <EntityCard {...company} />
+                  </div>
                 </Link>
               </CarouselItem>
             ))}
@@ -112,8 +118,14 @@ export const TopRatedEntities = () => {
           <CarouselContent>
             {topCreators.map((creator) => (
               <CarouselItem key={creator.id} className="md:basis-1/2 lg:basis-1/3">
-                <Link to={`/entity/${creator.id}`} className="block h-full">
-                  <EntityCard {...creator} />
+                <Link 
+                  to={`/entity/${creator.id}`} 
+                  className="block h-full"
+                  onClick={() => console.log("Clicked top creator with ID:", creator.id, "Name:", creator.name)}
+                >
+                  <div className="h-full">
+                    <EntityCard {...creator} />
+                  </div>
                 </Link>
               </CarouselItem>
             ))}

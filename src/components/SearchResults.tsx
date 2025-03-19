@@ -26,7 +26,12 @@ export const SearchResults = ({ results }: SearchResultsProps) => {
       <h2 className="text-2xl font-bold mb-6">Search Results</h2>
       <div className="grid gap-6 md:grid-cols-2">
         {results.map((entity) => (
-          <Link to={`/entity/${entity.id}`} key={entity.id} className="block transition-all">
+          <Link 
+            to={`/entity/${entity.id}`} 
+            key={entity.id} 
+            className="block transition-all"
+            onClick={() => console.log("Clicked entity with ID:", entity.id, "Name:", entity.name)}
+          >
             <EntityCard {...entity} />
           </Link>
         ))}

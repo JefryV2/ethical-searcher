@@ -43,8 +43,11 @@ const EntityDetail = () => {
         setLoading(true);
         // In a real app, this would fetch from an API using the ID
         // For now, using mock data
-        const foundEntity = mockEthicalData.find(e => e.id === id);
+        console.log("All available entities:", mockEthicalData.map(e => ({ id: e.id, name: e.name })));
         console.log("Looking for entity with ID:", id);
+        
+        // Make sure we're doing a strict comparison of string IDs
+        const foundEntity = mockEthicalData.find(e => String(e.id) === String(id));
         console.log("Found entity:", foundEntity);
         
         if (foundEntity) {
@@ -57,6 +60,7 @@ const EntityDetail = () => {
           }
           setEntity(foundEntity);
         } else {
+          console.error("Entity not found with ID:", id);
           toast({
             title: "Entity not found",
             description: "We couldn't find that company or creator",
@@ -77,7 +81,12 @@ const EntityDetail = () => {
       }
     };
 
-    fetchEntityData();
+    if (id) {
+      fetchEntityData();
+    } else {
+      console.error("No ID parameter found in URL");
+      navigate('/');
+    }
   }, [id, navigate, toast, customWeights]);
 
   const handleSaveWeights = (weights: Record<string, number>) => {
