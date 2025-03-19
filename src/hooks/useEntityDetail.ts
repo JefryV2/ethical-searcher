@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
-import { mockEthicalData } from '@/services/ethicalDataService';
+import { mockEthicalData } from '@/data/mockEthicalData';
 
 export const useEntityDetail = (id: string | undefined) => {
   const navigate = useNavigate();
@@ -13,7 +12,6 @@ export const useEntityDetail = (id: string | undefined) => {
   const [showWeightsInfo, setShowWeightsInfo] = useState(true);
   const [showCustomWeights, setShowCustomWeights] = useState(false);
 
-  // Load saved weights from localStorage
   useEffect(() => {
     const savedWeights = localStorage.getItem('customEthicalWeights');
     if (savedWeights) {
@@ -26,27 +24,19 @@ export const useEntityDetail = (id: string | undefined) => {
     }
   }, []);
 
-  // Fetch entity data
   useEffect(() => {
     const fetchEntityData = async () => {
       try {
         setLoading(true);
-        // In a real app, this would fetch from an API using the ID
-        // For now, using mock data
         console.log("All available entities:", mockEthicalData.map(e => ({ id: e.id, name: e.name })));
         console.log("Looking for entity with ID:", id);
         
-        // Make sure we're doing a strict comparison of string IDs
         const foundEntity = mockEthicalData.find(e => String(e.id) === String(id));
         console.log("Found entity:", foundEntity);
         
         if (foundEntity) {
-          // Apply custom weights to recalculate the score if needed
           if (Object.keys(customWeights).length > 0) {
             let adjustedEntity = {...foundEntity};
-            // In a real implementation, this would actually recalculate the score
-            // based on the custom weights and raw data
-            // For demo purposes, we're just showing the original score
           }
           setEntity(foundEntity);
         } else {
@@ -83,10 +73,6 @@ export const useEntityDetail = (id: string | undefined) => {
     setCustomWeights(weights);
     localStorage.setItem('customEthicalWeights', JSON.stringify(weights));
     
-    // In a real implementation, this would trigger a recalculation of scores
-    // based on the custom weights
-    
-    // For now, we'll just show a confirmation toast
     if (Object.keys(weights).length > 0) {
       toast({
         title: "Weights Updated",
@@ -99,9 +85,7 @@ export const useEntityDetail = (id: string | undefined) => {
       });
     }
 
-    // Automatically hide the info alert after weights are saved
     setShowWeightsInfo(false);
-    // Hide the weights panel after saving
     setShowCustomWeights(false);
   };
 
