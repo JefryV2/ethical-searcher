@@ -44,6 +44,9 @@ const EntityDetail = () => {
         // In a real app, this would fetch from an API using the ID
         // For now, using mock data
         const foundEntity = mockEthicalData.find(e => e.id === id);
+        console.log("Looking for entity with ID:", id);
+        console.log("Found entity:", foundEntity);
+        
         if (foundEntity) {
           // Apply custom weights to recalculate the score if needed
           if (Object.keys(customWeights).length > 0) {

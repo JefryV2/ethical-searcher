@@ -10,18 +10,8 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   ChevronUp, 
   ChevronDown, 
@@ -68,8 +58,6 @@ export const CustomScoringWeights = ({
   const [metrics, setMetrics] = useState<MetricWeight[]>([]);
   const [totalWeight, setTotalWeight] = useState(100);
   const [useCustomWeights, setUseCustomWeights] = useState(false);
-  
-  const form = useForm();
   
   // Initialize metrics based on entity type
   useEffect(() => {
@@ -227,21 +215,19 @@ export const CustomScoringWeights = ({
             <CardTitle className="text-lg">Personalize Ethical Scoring</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-              <FormControl>
-                <Checkbox 
-                  checked={useCustomWeights} 
-                  onCheckedChange={handleCustomWeightsToggle}
-                  id="custom-weights"
-                  className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                />
-              </FormControl>
+            <div className="flex flex-row items-center space-x-3 space-y-0">
+              <Checkbox 
+                checked={useCustomWeights} 
+                onCheckedChange={handleCustomWeightsToggle}
+                id="custom-weights"
+                className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+              />
               <div className="space-y-1 leading-none">
-                <FormLabel htmlFor="custom-weights" className="font-medium">
+                <label htmlFor="custom-weights" className="font-medium">
                   Use Custom Weights
-                </FormLabel>
+                </label>
               </div>
-            </FormItem>
+            </div>
           </div>
         </div>
         <CardDescription>
