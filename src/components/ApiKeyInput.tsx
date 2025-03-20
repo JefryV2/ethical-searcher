@@ -38,8 +38,8 @@ export const ApiKeyInput = () => {
       {!isKeySet ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground mb-2">
-            Enter your Gemini API key to enable AI-powered search. 
-            Make sure you have access to the Gemini API and use a key for the gemini-2.0-flash model.
+            Enter your Gemini API key to enable AI-powered ethical company search. 
+            This provides higher quality data than our sample database.
           </p>
           <div className="flex gap-2">
             <Input
@@ -57,7 +57,7 @@ export const ApiKeyInput = () => {
       ) : (
         <div className="flex items-center justify-between">
           <p className="text-sm text-green-600">
-            ✓ Gemini API key set. AI search is enabled.
+            ✓ Gemini API key set. Enhanced ethical search is enabled.
           </p>
           <Button variant="outline" size="sm" onClick={handleReset}>
             Reset Key

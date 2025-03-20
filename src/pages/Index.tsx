@@ -4,7 +4,7 @@ import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
 import { TopRatedEntities } from '@/components/TopRatedEntities';
 import { fetchEntityByName, EntityData, mockEthicalData } from '@/services/ethicalDataService';
-import { searchWithGemini, getGeminiApiKey } from '@/services/geminiService';
+import { searchWithGemini, getGeminiApiKey, performFallbackSearch } from '@/services/geminiService';
 import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -52,40 +52,32 @@ const Index = () => {
         }
       }
       
-      // If Gemini failed or no key, try direct API
-      try {
-        console.log("Trying direct API search");
-        const results = await fetchEntityByName(query);
+      // If Gemini failed or no key, try fallback search method
+      console.log("Using entity search fallback");
+      const results = await fetchEntityByName(query);
+      
+      if (results.length > 0) {
+        console.log(`Found ${results.length} matches for "${query}"`);
+        setSearchResults(results);
         
-        if (results.length > 0) {
-          console.log(`Found ${results.length} matches for "${query}"`);
-          setSearchResults(results);
-          setIsUsingFallbackData(false);
-        } else {
-          // No results from API, use fallback
-          console.log("No API results, using fallback data");
-          setIsUsingFallbackData(true);
-          const fallbackResults = performSimpleFallback(query);
-          setSearchResults(fallbackResults);
-          
+        // Check if we're using mock data
+        const isUsingMock = results.every(item => 
+          mockEthicalData.some(mockItem => mockItem.id === item.id)
+        );
+        
+        setIsUsingFallbackData(isUsingMock);
+        
+        if (isUsingMock) {
           toast({
             title: "Using sample data",
-            description: "We couldn't find exact matches in our database",
+            description: "Connect Gemini API for better results",
             variant: "default",
           });
         }
-      } catch (error) {
-        console.log("Error in API search, using fallback", error);
+      } else {
+        // No results, show empty state
+        setSearchResults([]);
         setIsUsingFallbackData(true);
-        
-        toast({
-          title: "Using sample data",
-          description: "We couldn't connect to the real data source at this time",
-          variant: "default",
-        });
-        
-        const fallbackResults = performSimpleFallback(query);
-        setSearchResults(fallbackResults);
       }
       
       setHasSearched(true);
@@ -101,38 +93,6 @@ const Index = () => {
     } finally {
       setIsSearching(false);
     }
-  };
-
-  // Super simple fallback search that always returns results
-  const performSimpleFallback = (query: string): EntityData[] => {
-    console.log("Using simple fallback search");
-    const searchTerms = query.toLowerCase().split(/\s+/);
-    
-    // If the query is very short, be more lenient
-    if (query.length <= 3) {
-      // Just return all results for very short queries
-      return mockEthicalData;
-    }
-    
-    const results = mockEthicalData.filter(item => {
-      const name = item.name.toLowerCase();
-      const desc = item.description.toLowerCase();
-      const categories = item.categories.join(' ').toLowerCase();
-      
-      // Check if any search term exists in the item data
-      return searchTerms.some(term => 
-        name.includes(term) || 
-        desc.includes(term) || 
-        categories.includes(term)
-      );
-    });
-    
-    // If still no results, return a few items as examples
-    if (results.length === 0) {
-      return mockEthicalData.slice(0, 3); // Return first 3 items as examples
-    }
-    
-    return results;
   };
 
   // Filter results based on active tab
@@ -158,7 +118,7 @@ const Index = () => {
             {isUsingFallbackData && (
               <div className="w-full max-w-6xl mx-auto px-4 mb-4">
                 <p className="text-amber-500 text-sm bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
-                  Currently showing sample data. Real API connection unavailable.
+                  Currently showing sample data. Connect Gemini API for better results.
                 </p>
               </div>
             )}
