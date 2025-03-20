@@ -3,7 +3,7 @@ import { mockEthicalData } from '@/data/mockEthicalData';
 import { toast } from "@/components/ui/use-toast";
 
 // Hardcoded API key - in a production app, this would be stored securely on the server
-const HARDCODED_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
+const HARDCODED_API_KEY = "AIzaSyD-Yj_x3IDKS_X1zNcGD4ZA3-GFB6eWi5o";
 
 // We'll keep this for backward compatibility but it will always return the hardcoded key
 export const getGeminiApiKey = () => {
