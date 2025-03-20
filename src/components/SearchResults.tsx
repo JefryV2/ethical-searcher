@@ -1,6 +1,6 @@
 
 import { EntityCard } from '@/components/EntityCard';
-import { EntityData } from '@/services/ethicalDataService';
+import { EntityData } from '@/types/entityTypes';
 import { Link } from 'react-router-dom';
 
 interface SearchResultsProps {

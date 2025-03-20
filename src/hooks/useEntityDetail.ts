@@ -1,7 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { mockEthicalData } from '@/data/mockEthicalData';
+import { fetchEntityByName } from '@/services/ethicalDataService';
 
 export const useEntityDetail = (id: string | undefined) => {
   const navigate = useNavigate();
@@ -31,22 +33,47 @@ export const useEntityDetail = (id: string | undefined) => {
         console.log("All available entities:", mockEthicalData.map(e => ({ id: e.id, name: e.name })));
         console.log("Looking for entity with ID:", id);
         
-        const foundEntity = mockEthicalData.find(e => String(e.id) === String(id));
-        console.log("Found entity:", foundEntity);
-        
-        if (foundEntity) {
-          if (Object.keys(customWeights).length > 0) {
-            let adjustedEntity = {...foundEntity};
-          }
-          setEntity(foundEntity);
-        } else {
-          console.error("Entity not found with ID:", id);
+        // Check if ID exists
+        if (!id) {
+          console.error("No ID parameter found in URL");
           toast({
             title: "Entity not found",
-            description: "We couldn't find that company or creator",
+            description: "Missing entity identifier",
             variant: "destructive",
           });
           navigate('/');
+          return;
+        }
+        
+        // Try to find the entity directly from mockEthicalData first
+        const foundEntity = mockEthicalData.find(e => String(e.id) === String(id));
+        
+        if (foundEntity) {
+          console.log("Entity found in mock data:", foundEntity.name);
+          setEntity(foundEntity);
+        } else {
+          // If not found in mock data, try searching by ID (could be from API)
+          console.log("Entity not found in mock data, trying to fetch it");
+          
+          try {
+            const searchResults = await fetchEntityByName(id);
+            const matchingEntity = searchResults?.find(e => String(e.id) === String(id));
+            
+            if (matchingEntity) {
+              console.log("Entity found via API:", matchingEntity.name);
+              setEntity(matchingEntity);
+            } else {
+              throw new Error("Entity not found");
+            }
+          } catch (error) {
+            console.error("Error searching for entity:", error);
+            toast({
+              title: "Entity not found",
+              description: "We couldn't find that company or creator",
+              variant: "destructive",
+            });
+            navigate('/');
+          }
         }
       } catch (error) {
         console.error("Error loading entity:", error);
@@ -61,13 +88,8 @@ export const useEntityDetail = (id: string | undefined) => {
       }
     };
 
-    if (id) {
-      fetchEntityData();
-    } else {
-      console.error("No ID parameter found in URL");
-      navigate('/');
-    }
-  }, [id, navigate, toast, customWeights]);
+    fetchEntityData();
+  }, [id, navigate, toast]);
 
   const handleSaveWeights = (weights: Record<string, number>) => {
     setCustomWeights(weights);
