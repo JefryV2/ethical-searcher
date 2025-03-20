@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
@@ -30,8 +29,6 @@ export const useEntityDetail = (id: string | undefined) => {
     const fetchEntityData = async () => {
       try {
         setLoading(true);
-        console.log("All available entities:", mockEthicalData.map(e => ({ id: e.id, name: e.name })));
-        console.log("Looking for entity with ID:", id);
         
         // Check if ID exists
         if (!id) {
@@ -45,25 +42,51 @@ export const useEntityDetail = (id: string | undefined) => {
           return;
         }
         
-        // Try to find the entity directly from mockEthicalData first
-        const foundEntity = mockEthicalData.find(e => String(e.id) === String(id));
+        console.log("Looking for entity with ID:", id);
         
-        if (foundEntity) {
-          console.log("Entity found in mock data:", foundEntity.name);
-          setEntity(foundEntity);
+        // First, try to find entity from sessionStorage (where search results are stored)
+        const searchResultsJson = sessionStorage.getItem('lastSearchResults');
+        if (searchResultsJson) {
+          try {
+            const searchResults = JSON.parse(searchResultsJson);
+            console.log("Checking saved search results:", searchResults.map((e: any) => ({ id: e.id, name: e.name })));
+            
+            const matchFromSearchResults = searchResults.find((e: any) => String(e.id) === String(id));
+            if (matchFromSearchResults) {
+              console.log("Entity found in search results:", matchFromSearchResults.name);
+              setEntity(matchFromSearchResults);
+              setLoading(false);
+              return;
+            } else {
+              console.log("Entity not found in search results, trying other sources");
+            }
+          } catch (error) {
+            console.error("Error parsing search results from session storage:", error);
+          }
+        }
+        
+        // If not found in session storage, try mock data
+        console.log("Checking mock data for entity...");
+        const foundInMockData = mockEthicalData.find(e => String(e.id) === String(id));
+        
+        if (foundInMockData) {
+          console.log("Entity found in mock data:", foundInMockData.name);
+          setEntity(foundInMockData);
         } else {
-          // If not found in mock data, try searching by ID (could be from API)
-          console.log("Entity not found in mock data, trying to fetch it");
+          // If not found in mock data, try API
+          console.log("Entity not found in mock data, trying API fetch");
           
           try {
             const searchResults = await fetchEntityByName(id);
+            console.log("API search results:", searchResults?.map(e => ({ id: e.id, name: e.name })));
+            
             const matchingEntity = searchResults?.find(e => String(e.id) === String(id));
             
             if (matchingEntity) {
               console.log("Entity found via API:", matchingEntity.name);
               setEntity(matchingEntity);
             } else {
-              throw new Error("Entity not found");
+              throw new Error("Entity not found in any data source");
             }
           } catch (error) {
             console.error("Error searching for entity:", error);

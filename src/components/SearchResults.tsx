@@ -8,6 +8,11 @@ interface SearchResultsProps {
 }
 
 export const SearchResults = ({ results }: SearchResultsProps) => {
+  // Store search results in sessionStorage for later reference
+  if (results.length > 0) {
+    sessionStorage.setItem('lastSearchResults', JSON.stringify(results));
+  }
+  
   if (results.length === 0) {
     return (
       <div className="w-full max-w-6xl mx-auto px-4 py-8">
