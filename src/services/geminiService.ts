@@ -2,15 +2,18 @@ import { EntityData } from '@/types/entityTypes';
 import { mockEthicalData } from '@/data/mockEthicalData';
 import { toast } from "@/components/ui/use-toast";
 
-// Store API key in memory (not localStorage for security reasons)
-let apiKey: string | null = null;
+// Hardcoded API key - in a production app, this would be stored securely on the server
+const HARDCODED_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
 
-export const setGeminiApiKey = (key: string) => {
-  apiKey = key;
+// We'll keep this for backward compatibility but it will always return the hardcoded key
+export const getGeminiApiKey = () => {
+  return HARDCODED_API_KEY;
 };
 
-export const getGeminiApiKey = () => {
-  return apiKey;
+// This function is kept for backward compatibility but does nothing
+export const setGeminiApiKey = (key: string) => {
+  console.log("API key setting is disabled in this version");
+  return;
 };
 
 // Hidden API service
@@ -52,10 +55,6 @@ const fetchFromApiInternal = async (searchQuery: string): Promise<EntityData[] |
 };
 
 export const searchWithGemini = async (query: string): Promise<EntityData[]> => {
-  if (!apiKey) {
-    throw new Error("Gemini API key not set");
-  }
-
   try {
     // Enhanced prompt that explicitly asks for real data search
     const prompt = `You are a helpful search assistant specializing in ethical companies and creators.
@@ -102,11 +101,12 @@ Focus on providing REAL data about actual companies and creators. If you cannot 
 
     console.log("Sending search request to Gemini API for real data with query:", query);
     
+    // Use the hardcoded API key
     const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
+        'x-goog-api-key': HARDCODED_API_KEY
       },
       body: JSON.stringify({
         contents: [{
@@ -173,7 +173,7 @@ Focus on providing REAL data about actual companies and creators. If you cannot 
   } catch (error) {
     console.error("Error in Gemini search:", error);
     toast({
-      title: "Gemini search error",
+      title: "Search error",
       description: error instanceof Error ? error.message : "Failed to search with AI",
       variant: "destructive",
     });

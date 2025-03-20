@@ -4,8 +4,7 @@ import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
 import { TopRatedEntities } from '@/components/TopRatedEntities';
 import { fetchEntityByName, EntityData, mockEthicalData } from '@/services/ethicalDataService';
-import { searchWithGemini, getGeminiApiKey, performFallbackSearch } from '@/services/geminiService';
-import { ApiKeyInput } from '@/components/ApiKeyInput';
+import { searchWithGemini } from '@/services/geminiService';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Building, User } from 'lucide-react';
@@ -33,31 +32,37 @@ const Index = () => {
       setIsUsingFallbackData(false);
       console.log("Starting search with query:", query);
       
-      // Try Gemini API first if key is set
-      if (getGeminiApiKey()) {
-        try {
-          console.log("Using Gemini for search");
-          const geminiResults = await searchWithGemini(query);
+      // Always use Gemini API first since we have a hardcoded key
+      try {
+        console.log("Using Gemini for search");
+        const geminiResults = await searchWithGemini(query);
+        
+        if (Array.isArray(geminiResults) && geminiResults.length > 0) {
+          console.log(`Gemini search found ${geminiResults.length} results`);
           
-          if (Array.isArray(geminiResults) && geminiResults.length > 0) {
-            console.log(`Gemini search found ${geminiResults.length} results`);
-            setSearchResults(geminiResults);
-            setHasSearched(true);
-            setIsSearching(false);
-            return;
-          }
-        } catch (error) {
-          console.error("Gemini search error:", error);
-          // Continue to fallback methods
+          // Store results in sessionStorage for detail view
+          sessionStorage.setItem('searchResults', JSON.stringify(geminiResults));
+          
+          setSearchResults(geminiResults);
+          setHasSearched(true);
+          setIsSearching(false);
+          return;
         }
+      } catch (error) {
+        console.error("Gemini search error:", error);
+        // Continue to fallback methods
       }
       
-      // If Gemini failed or no key, try fallback search method
+      // If Gemini failed, try fallback search method
       console.log("Using entity search fallback");
       const results = await fetchEntityByName(query);
       
       if (results.length > 0) {
         console.log(`Found ${results.length} matches for "${query}"`);
+        
+        // Store results in sessionStorage for detail view
+        sessionStorage.setItem('searchResults', JSON.stringify(results));
+        
         setSearchResults(results);
         
         // Check if we're using mock data
@@ -66,14 +71,6 @@ const Index = () => {
         );
         
         setIsUsingFallbackData(isUsingMock);
-        
-        if (isUsingMock) {
-          toast({
-            title: "Using sample data",
-            description: "Connect Gemini API for better results",
-            variant: "default",
-          });
-        }
       } else {
         // No results, show empty state
         setSearchResults([]);
@@ -106,7 +103,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-secondary/20 to-background">
       <main className="container mx-auto">
-        <ApiKeyInput />
         <SearchHero onSearch={handleSearch} isSearching={isSearching} />
         
         {!hasSearched && (
@@ -118,7 +114,7 @@ const Index = () => {
             {isUsingFallbackData && (
               <div className="w-full max-w-6xl mx-auto px-4 mb-4">
                 <p className="text-amber-500 text-sm bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
-                  Currently showing sample data. Connect Gemini API for better results.
+                  Showing sample data because no exact matches were found.
                 </p>
               </div>
             )}
