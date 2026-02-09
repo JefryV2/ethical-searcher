@@ -1,1 +1,1 @@
-scan or ethical conduct dynamically for you douefaced ppl 
+scan or ethical conduct dynamically for you doubefaced ppl 
