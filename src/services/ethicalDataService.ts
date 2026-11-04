@@ -2,7 +2,9 @@
 import { toast } from "@/components/ui/use-toast";
 import { EntityData } from '@/types/entityTypes';
 import { mockEthicalData } from '@/data/mockEthicalData';
-import { performFallbackSearch } from './geminiService';
+import { performFallbackSearch } from './localSearch';
+
+export { performFallbackSearch } from './localSearch';
 
 // Re-export the mock data and types for backward compatibility
 export { mockEthicalData } from '@/data/mockEthicalData';

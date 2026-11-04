@@ -3,8 +3,11 @@ import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
 import { TopRatedEntities } from '@/components/TopRatedEntities';
-import { fetchEntityByName, EntityData, mockEthicalData } from '@/services/ethicalDataService';
-import { searchWithGemini } from '@/services/geminiService';
+import { EntityData } from '@/services/ethicalDataService';
+import { getGeminiApiKey, searchWithGemini, reportGeminiError } from '@/services/geminiService';
+import { rankEntitiesSemantically } from '@/services/semanticSearchService';
+import { performFallbackSearch } from '@/services/localSearch';
+import { mockEthicalData } from '@/data/mockEthicalData';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Building, User } from 'lucide-react';
@@ -13,9 +16,16 @@ const Index = () => {
   const [searchResults, setSearchResults] = useState<EntityData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isUsingFallbackData, setIsUsingFallbackData] = useState(false);
+  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'companies' | 'creators'>('all');
   const { toast } = useToast();
+
+  const commitResults = (results: EntityData[], notice: string | null) => {
+    sessionStorage.setItem('searchResults', JSON.stringify(results));
+    setSearchResults(results);
+    setFallbackNotice(notice);
+    setHasSearched(true);
+  };
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -26,58 +36,48 @@ const Index = () => {
       });
       return;
     }
-    
+
     try {
       setIsSearching(true);
-      setIsUsingFallbackData(false);
-      console.log("Starting search with query:", query);
-      
-      // Always use Gemini API first since we have a hardcoded key
+      setFallbackNotice(null);
+
+      // 1) Gemini runs only when the user opted in with their own key.
+      if (getGeminiApiKey()) {
+        try {
+          const geminiResults = await searchWithGemini(query);
+          if (Array.isArray(geminiResults) && geminiResults.length > 0) {
+            commitResults(geminiResults, null);
+            return;
+          }
+        } catch (error) {
+          // Report the failure honestly, then continue down the local chain.
+          reportGeminiError(error);
+        }
+      }
+
+      // 2) On-device semantic search: a real MiniLM embedding model ranks the
+      //    catalog in the browser. No key, no server.
       try {
-        console.log("Using Gemini for search");
-        const geminiResults = await searchWithGemini(query);
-        
-        if (Array.isArray(geminiResults) && geminiResults.length > 0) {
-          console.log(`Gemini search found ${geminiResults.length} results`);
-          
-          // Store results in sessionStorage for detail view
-          sessionStorage.setItem('searchResults', JSON.stringify(geminiResults));
-          
-          setSearchResults(geminiResults);
-          setHasSearched(true);
-          setIsSearching(false);
+        const ranked = await rankEntitiesSemantically(query, mockEthicalData);
+        if (ranked.length > 0) {
+          commitResults(
+            ranked.map((entry) => entry.entity),
+            'Ranked by an on-device semantic model against the local catalog.',
+          );
           return;
         }
       } catch (error) {
-        console.error("Gemini search error:", error);
-        // Continue to fallback methods
+        console.error('Semantic search failed, falling back to string matching:', error);
       }
-      
-      // If Gemini failed, try fallback search method
-      console.log("Using entity search fallback");
-      const results = await fetchEntityByName(query);
-      
+
+      // 3) String-based fallback if the model could not load or matched nothing.
+      const results = performFallbackSearch(query);
       if (results.length > 0) {
-        console.log(`Found ${results.length} matches for "${query}"`);
-        
-        // Store results in sessionStorage for detail view
-        sessionStorage.setItem('searchResults', JSON.stringify(results));
-        
-        setSearchResults(results);
-        
-        // Check if we're using mock data
-        const isUsingMock = results.every(item => 
-          mockEthicalData.some(mockItem => mockItem.id === item.id)
-        );
-        
-        setIsUsingFallbackData(isUsingMock);
+        commitResults(results, 'Matched by keyword search because the on-device model was unavailable or found no hit.');
       } else {
-        // No results, show empty state
-        setSearchResults([]);
-        setIsUsingFallbackData(true);
+        localStorage.setItem('lastQuery', query);
+        commitResults([], 'No matches found — the catalog contains only sample entities.');
       }
-      
-      setHasSearched(true);
     } catch (error) {
       console.error('Search error:', error);
       toast({
@@ -111,10 +111,10 @@ const Index = () => {
         
         {hasSearched && (
           <>
-            {isUsingFallbackData && (
+            {fallbackNotice && (
               <div className="w-full max-w-6xl mx-auto px-4 mb-4">
                 <p className="text-amber-500 text-sm bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
-                  Showing sample data because no exact matches were found.
+                  {fallbackNotice}
                 </p>
               </div>
             )}

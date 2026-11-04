@@ -33,12 +33,13 @@ export const ApiKeyInput = () => {
 
   return (
     <div className="mb-6 p-4 glass-card">
-      <h3 className="text-lg font-medium mb-2">Gemini AI Search</h3>
+      <h3 className="text-lg font-medium mb-2">Gemini search (optional)</h3>
       {!isKeySet ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <p className="text-sm text-muted-foreground mb-2">
-            Enter your Gemini API key to enable AI-powered ethical company search. 
-            This provides higher quality data than our sample database.
+            Search already works without an account: an on-device embedding model handles ranking and
+            scoring locally. Adding your own Gemini key merely extends results beyond the catalog —
+            the key stays in this browser only and is never bundled or sent elsewhere.
           </p>
           <div className="flex gap-2">
             <Input
@@ -56,7 +57,7 @@ export const ApiKeyInput = () => {
       ) : (
         <div className="flex items-center justify-between">
           <p className="text-sm text-green-600">
-            ✓ Gemini API key set. Enhanced ethical search is enabled.
+            ✓ Gemini key set — extended search enabled. The on-device models remain available.
           </p>
           <Button variant="outline" size="sm" onClick={handleReset}>
             Reset Key
