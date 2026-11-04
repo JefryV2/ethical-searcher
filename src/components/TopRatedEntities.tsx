@@ -81,10 +81,10 @@ export const TopRatedEntities = () => {
                 <Link 
                   to={`/entity/${company.id}`} 
                   className="block h-full"
-                  onClick={() => console.log("Clicked top company with ID:", company.id, "Name:", company.name)}
                 >
+                  {/* Nested site links render as text while the whole card is a link */}
                   <div className="h-full">
-                    <EntityCard {...company} />
+                    <EntityCard {...company} linked />
                   </div>
                 </Link>
               </CarouselItem>
@@ -121,10 +121,9 @@ export const TopRatedEntities = () => {
                 <Link 
                   to={`/entity/${creator.id}`} 
                   className="block h-full"
-                  onClick={() => console.log("Clicked top creator with ID:", creator.id, "Name:", creator.name)}
                 >
                   <div className="h-full">
-                    <EntityCard {...creator} />
+                    <EntityCard {...creator} linked />
                   </div>
                 </Link>
               </CarouselItem>

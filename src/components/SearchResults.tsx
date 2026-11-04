@@ -5,9 +5,11 @@ import { Link } from 'react-router-dom';
 
 interface SearchResultsProps {
   results: EntityData[];
+  /** Embedding similarity per entity id — only present for model-ranked searches. */
+  similarities?: Record<string, number>;
 }
 
-export const SearchResults = ({ results }: SearchResultsProps) => {
+export const SearchResults = ({ results, similarities = {} }: SearchResultsProps) => {
   // Store search results in sessionStorage for later reference
   if (results.length > 0) {
     sessionStorage.setItem('lastSearchResults', JSON.stringify(results));
@@ -35,9 +37,8 @@ export const SearchResults = ({ results }: SearchResultsProps) => {
             to={`/entity/${entity.id}`} 
             key={entity.id} 
             className="block transition-all"
-            onClick={() => console.log("Clicked entity with ID:", entity.id, "Name:", entity.name)}
           >
-            <EntityCard {...entity} />
+            <EntityCard {...entity} similarity={similarities[entity.id]} linked />
           </Link>
         ))}
       </div>

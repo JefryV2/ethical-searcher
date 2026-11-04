@@ -40,10 +40,49 @@ type ZeroShotClassifier = (
 let embedderJob: Promise<Embedder> | null = null;
 let classifierJob: Promise<ZeroShotClassifier> | null = null;
 
+// Download progress plumbing: the first run can take tens of seconds on a
+// slow connection, so UI elements subscribe here instead of guessing.
+export interface ModelProgress {
+  task: 'embeddings' | 'zero-shot';
+  file: string;
+  status: 'pending' | 'progress' | 'done' | 'error';
+  /** 0-100 as reported by the pipeline; -1 when unknown. */
+  progress: number;
+}
+
+const progressListeners = new Set<{ loadId: number; cb: (p: ModelProgress) => void }>();
+let loadSeq = 0;
+let activeLoad: { loadId: number; task: string; file: string; status: string; progress: number } | null = null;
+
+export const subscribeModelProgress = (cb: (p: ModelProgress) => void): (() => void) => {
+  const entry = { loadId: loadSeq, cb };
+  loadSeq += 1;
+  progressListeners.add(entry as { loadId: number; cb: (p: ModelProgress) => void });
+  if (activeLoad) cb({ ...(activeLoad as unknown as ModelProgress) });
+  return () => progressListeners.delete(entry as { loadId: number; cb: (p: ModelProgress) => void });
+};
+
+const trackProgress = (task: 'embeddings' | 'zero-shot') => (data: { status?: string; file?: string; progress?: number }) => {
+  const status = data.status === 'progress' ? 'progress' : data.status === 'done' ? 'done' : data.status === 'ready' ? 'done' : 'pending';
+  activeLoad = {
+    loadId: activeLoad?.loadId ?? 0,
+    task,
+    file: data.file ?? '',
+    status,
+    progress: typeof data.progress === 'number' ? Math.round(data.progress) : -1,
+  };
+  progressListeners.forEach(({ cb }) =>
+    cb({ task, file: data.file ?? '', status, progress: activeLoad!.progress }),
+  );
+  if (status === 'done') activeLoad = null;
+};
+
 export const getEmbedder = (): Promise<Embedder> => {
   if (!embedderJob) {
     console.log('[ml] loading embedding model:', EMBEDDING_MODEL_ID);
-    embedderJob = pipeline('feature-extraction', EMBEDDING_MODEL_ID) as unknown as Promise<Embedder>;
+    embedderJob = pipeline('feature-extraction', EMBEDDING_MODEL_ID, {
+      progress_callback: trackProgress('embeddings'),
+    }) as unknown as Promise<Embedder>;
   }
   return embedderJob;
 };
@@ -51,7 +90,9 @@ export const getEmbedder = (): Promise<Embedder> => {
 export const getZeroShotClassifier = (): Promise<ZeroShotClassifier> => {
   if (!classifierJob) {
     console.log('[ml] loading NLI model:', NLI_MODEL_ID);
-    classifierJob = pipeline('zero-shot-classification', NLI_MODEL_ID) as unknown as Promise<ZeroShotClassifier>;
+    classifierJob = pipeline('zero-shot-classification', NLI_MODEL_ID, {
+      progress_callback: trackProgress('zero-shot'),
+    }) as unknown as Promise<ZeroShotClassifier>;
   }
   return classifierJob;
 };

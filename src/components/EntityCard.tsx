@@ -27,6 +27,11 @@ interface EntityProps {
   controversies?: Controversy[];
   website?: string;
   ethical_analysis?: string;
+  /** Optional embedding similarity (0-1) from an on-device model ranking. */
+  similarity?: number;
+  /** True when the whole card is wrapped in a navigation link, so the
+   *  website anchor must not be an <a> (invalid nesting inside <a>). */
+  linked?: boolean;
 }
 
 export const EntityCard = ({ 
@@ -38,7 +43,9 @@ export const EntityCard = ({
   certifications = [], 
   controversies = [],
   website,
-  ethical_analysis
+  ethical_analysis,
+  similarity,
+  linked = false
 }: EntityProps) => {
   // Convert ethicalScore from 0-10 to 0-100 scale if needed
   const displayScore = ethicalScore > 10 ? ethicalScore : ethicalScore * 10;
@@ -50,6 +57,8 @@ export const EntityCard = ({
     return "text-red-500";
   };
 
+  // Website link is interactive only when the card is not itself wrapped in a
+  // <Link> — an <a> nested inside an <a> is invalid and React warns about it.
   return (
     <Card className="glass-card hover:scale-[1.02] p-6 space-y-4 overflow-hidden">
       <div className="flex items-start justify-between">
@@ -68,20 +77,29 @@ export const EntityCard = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center gap-2 cursor-help">
+                {similarity !== undefined && (
+                  <Badge variant="outline" className="text-primary border-primary/40">
+                    {Math.round(similarity * 100)}% match
+                  </Badge>
+                )}
                 <ShieldCheck className={`w-5 h-5 ${getScoreColor(displayScore)}`} />
                 <span className={`font-medium ${getScoreColor(displayScore)}`}>{displayScore}/100</span>
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Ethics Score: Based on environmental impact, labor practices, and social responsibility</p>
+              <p>Ethics Score: Based on environmental impact, labor practices, and social responsibility{similarity !== undefined && " · '% match' is the embedding similarity from the on-device model"}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
       
       {website && (
-        <div className="text-sm text-primary hover:underline">
-          <a href={website} target="_blank" rel="noopener noreferrer">{website}</a>
+        <div className="text-sm text-primary">
+          {linked ? (
+            <span className="hover:underline">{website}</span>
+          ) : (
+            <a href={website} target="_blank" rel="noopener noreferrer" className="hover:underline">{website}</a>
+          )}
         </div>
       )}
       
@@ -126,7 +144,7 @@ export const EntityCard = ({
                 <p className="text-muted-foreground">{controversy.description}</p>
                 <div className="flex items-center justify-between mt-1">
                   {controversy.date && <p className="text-xs opacity-70">{new Date(controversy.date).toLocaleDateString()}</p>}
-                  {controversy.source_url && (
+                  {controversy.source_url && !linked && (
                     <a 
                       href={controversy.source_url} 
                       className="flex items-center gap-1 text-primary text-xs hover:underline"

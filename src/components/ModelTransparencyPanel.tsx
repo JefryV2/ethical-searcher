@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Loader2, CircleSlash, Info } from 'lucide-react';
 import type { EntityData } from '@/types/entityTypes';
 import { analyzeTransparency, type TransparencyAnalysis } from '@/services/transparencyEngine';
+import { ModelStatus } from '@/components/ModelStatus';
 
 interface ModelTransparencyPanelProps {
   entity: EntityData;
@@ -68,6 +69,9 @@ export const ModelTransparencyPanel = ({ entity }: ModelTransparencyPanelProps) 
               MobileBERT entailment on this entity's record. The model (~26 MB) downloads once
               per browser, then runs locally — no key, no server.
             </p>
+            <div className="mt-2">
+              <ModelStatus />
+            </div>
           </div>
         </div>
       </Card>

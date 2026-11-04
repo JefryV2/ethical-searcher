@@ -3,13 +3,16 @@ import { useState } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ModelStatus } from '@/components/ModelStatus';
 
 export const SearchHero = ({ 
   onSearch, 
-  isSearching 
+  isSearching,
+  searchStatus 
 }: { 
   onSearch: (query: string) => void;
   isSearching?: boolean;
+  searchStatus?: string | null;
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -24,7 +27,8 @@ export const SearchHero = ({
         Discover Ethical Practices
       </h1>
       <p className="text-lg text-muted-foreground text-center mb-8 max-w-xl">
-        Use AI to search for companies and content creators to learn about their ethical practices
+        Search companies and content creators for their ethical track record — scored by an
+        on-device model, no account needed
       </p>
       
       <form onSubmit={handleSubmit} className="search-container">
@@ -54,6 +58,13 @@ export const SearchHero = ({
           </Button>
         </div>
       </form>
+
+      <div className="mt-3 min-h-[18px] flex items-center justify-center">
+        {searchStatus && (
+          <p className="text-xs text-muted-foreground">{searchStatus}</p>
+        )}
+        {!searchStatus && <ModelStatus />}
+      </div>
     </div>
   );
 };
