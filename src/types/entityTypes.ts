@@ -24,6 +24,14 @@ export interface CharitableWork {
   year?: string;
 }
 
+export interface SourceRef {
+  provider: 'wikidata' | 'wikipedia' | 'website' | 'platform';
+  title: string;
+  url: string;
+  /** Short evidence excerpt the app extracted from this source, if any. */
+  excerpt?: string;
+}
+
 export interface EntityData {
   id: string;
   name: string;
@@ -38,4 +46,10 @@ export interface EntityData {
   disclosures?: Disclosure[];
   sponsorships?: Sponsorship[];
   charitable_work?: CharitableWork[];
+  /** Scraped evidence provenance: who supplied the record and from where. */
+  sources?: SourceRef[];
+  /** Lead image (Wikipedia thumbnail) when available. */
+  thumbnailUrl?: string;
+  /** Public platform handlesresolved from Wikidata. */
+  platformLinks?: { label: string; url: string }[];
 }

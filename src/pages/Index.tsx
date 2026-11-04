@@ -3,38 +3,33 @@ import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
 import { TopRatedEntities } from '@/components/TopRatedEntities';
-import { ApiKeyInput } from '@/components/ApiKeyInput';
 import { EntityData } from '@/services/ethicalDataService';
-import { getGeminiApiKey, searchWithGemini, reportGeminiError } from '@/services/geminiService';
-import { rankEntitiesHybrid, type SemanticScoredEntity } from '@/services/semanticSearchService';
+import { lookupEntities, type BuiltEntity } from '@/services/lookupService';
 import { performFallbackSearch } from '@/services/localSearch';
-import { mockEthicalData } from '@/data/mockEthicalData';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Building, User } from 'lucide-react';
 
 const Index = () => {
   const [searchResults, setSearchResults] = useState<EntityData[]>([]);
-  const [similarities, setSimilarities] = useState<Record<string, number>>({});
+  const [evidenceMap, setEvidenceMap] = useState<Record<string, BuiltEntity>>({});
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
+  const [failedNotice, setFailedNotice] = useState<string | null>(null);
   const [searchStatus, setSearchStatus] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'companies' | 'creators'>('all');
   const { toast } = useToast();
 
-  const commitResults = (
+  const commit = (
     results: EntityData[],
     notice: string | null,
-    sims: SemanticScoredEntity[] = [],
+    built: BuiltEntity[] = [],
   ) => {
     sessionStorage.setItem('searchResults', JSON.stringify(results));
     sessionStorage.setItem('lastSearchResults', JSON.stringify(results));
     setSearchResults(results);
-    setSimilarities(
-      Object.fromEntries(sims.map((s) => [s.entity.id, s.similarity])),
-    );
-    setFallbackNotice(notice);
+    setEvidenceMap(Object.fromEntries(built.map((b) => [b.entity.id, b])));
+    setFailedNotice(notice);
     setHasSearched(true);
   };
 
@@ -50,49 +45,46 @@ const Index = () => {
 
     try {
       setIsSearching(true);
-      setFallbackNotice(null);
-      setSimilarities({});
+      setFailedNotice(null);
+      setEvidenceMap({});
 
-      // 1) Gemini runs only when the user opted in with their own key.
-      if (getGeminiApiKey()) {
-        setSearchStatus('Asking Gemini through your saved key…');
-        try {
-          const geminiResults = await searchWithGemini(query);
-          if (Array.isArray(geminiResults) && geminiResults.length > 0) {
-            commitResults(geminiResults, null);
-            return;
-          }
-        } catch (error) {
-          // Report the failure honestly, then continue down the local chain.
-          reportGeminiError(error);
-        }
-      }
-
-      // 2) On-device semantic search: a real MiniLM embedding model ranks the
-      //    catalog in the browser. No key, no server.
-      setSearchStatus('Embedding your query on-device…');
+      // 1) Live source lookup: Wikidata identity -> Wikipedia summary ->
+      //    scrape the official site. No keys, no accounts; every hit keeps
+      //    the URL it came from.
+      setSearchStatus('Resolving in Wikidata…');
+      let built: BuiltEntity[] = [];
       try {
-        const ranked = await rankEntitiesHybrid(query, mockEthicalData);
-        if (ranked.length > 0) {
-          commitResults(
-            ranked.map((entry) => entry.entity),
-            'Ranked by an on-device semantic model blended with keyword matching.',
-            ranked,
-          );
-          return;
-        }
+        built = await lookupEntities(query, { maxEntities: 3 });
       } catch (error) {
-        console.error('Semantic search failed, falling back to string matching:', error);
+        console.error('Source lookup failed:', error);
       }
 
-      // 3) String-based fallback if the model could not load or matched nothing.
-      setSearchStatus('Falling back to keyword matching…');
-      const results = performFallbackSearch(query);
-      if (results.length > 0) {
-        commitResults(results, 'Matched by keyword search because the on-device model was unavailable or found no hit.');
-      } else {
-        commitResults([], 'No matches found — the catalog contains only sample entities.');
+      if (built.length === 0) {
+        // 2) Nothing in public sources: fall back to the curated sample
+        //    catalog and say so rather than inventing a result.
+        setSearchStatus('No public record found — checking the sample catalog…');
+        const results = performFallbackSearch(query);
+        if (results.length > 0) {
+          commit(
+            results,
+            'Sample catalog match from keyword search. Search a named company or creator to pull live sources instead.',
+          );
+        } else {
+          commit(
+            [],
+            `No public record found for "${query}" — Wikidata returned nothing and the sample catalog has no match.`,
+          );
+        }
+        return;
       }
+
+      const entities = built.map((b) => b.entity);
+      const reachableSites = built.filter((b) => b.siteAudit.reachable > 0).length;
+      commit(
+        entities,
+        `Live record — ${reachableSites}/${built.length} official site${built.length > 1 ? 's' : ''} read, plus Wikidata and Wikipedia. The score reflects how much evidence was found publicly, not a verdict.`,
+        built,
+      );
     } catch (error) {
       console.error('Search error:', error);
       toast({
@@ -127,10 +119,10 @@ const Index = () => {
         
         {hasSearched && (
           <>
-            {fallbackNotice && (
+            {failedNotice && (
               <div className="w-full max-w-6xl mx-auto px-4 mb-4">
                 <p className="text-amber-500 text-sm bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
-                  {fallbackNotice}
+                  {failedNotice}
                 </p>
               </div>
             )}
@@ -155,20 +147,18 @@ const Index = () => {
                 </TabsList>
                 
                 <TabsContent value="all">
-                  <SearchResults results={filteredResults()} similarities={similarities} />
+                  <SearchResults results={filteredResults()} evidenceMap={evidenceMap} />
                 </TabsContent>
                 
                 <TabsContent value="companies">
-                  <SearchResults results={filteredResults()} similarities={similarities} />
+                  <SearchResults results={filteredResults()} evidenceMap={evidenceMap} />
                 </TabsContent>
                 
                 <TabsContent value="creators">
-                  <SearchResults results={filteredResults()} similarities={similarities} />
+                  <SearchResults results={filteredResults()} evidenceMap={evidenceMap} />
                 </TabsContent>
               </Tabs>
             </div>
-            
-            <ApiKeyInput />
           </>
         )}
       </main>

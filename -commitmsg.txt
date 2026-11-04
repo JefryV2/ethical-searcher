@@ -1,0 +1,23 @@
+Replace the Gemini path with keyless live-source scraping
+
+The record for a searched company or creator is now built from real
+public sources, with no API key and no account:
+
+- Wikidata resolves the query (ranked so taxa, regions, towns,
+  disambiguation pages and other lookalikes lose to real organizations
+  and people; humans resolve as creators) and yields the official
+  website, YouTube/X handles and industry labels
+- Wikipedia supplies the summary text and lead image
+- The official site is read through the free r.jina.ai proxy (no-cache
+  mode), with tracker redirects refused, reader preamble stripped, and
+  each fetched page keeping its provenance (URL + excerpt)
+- Transparency signals found in the scraped text (disclosures, sourcing,
+  reports, corrections, conflict-of-interest mentions) become traceable
+  evidence with page-level provenance
+- The score becomes a deterministic evidence-coverage metric: how much
+  first-party material was actually found publicly, not a verdict
+- Gemini service, hardcoded key and ApiKeyInput are removed entirely;
+  search falls back to the sample catalog, labeled as such, when public
+  sources hold nothing
+- Fix Wikidata item-link parsing (item claims arrive as {id} objects,
+  which silenced the human/creator distinction and the class filters)

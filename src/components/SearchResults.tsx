@@ -2,14 +2,15 @@
 import { EntityCard } from '@/components/EntityCard';
 import { EntityData } from '@/types/entityTypes';
 import { Link } from 'react-router-dom';
+import type { BuiltEntity } from '@/services/lookupService';
 
 interface SearchResultsProps {
   results: EntityData[];
-  /** Embedding similarity per entity id — only present for model-ranked searches. */
-  similarities?: Record<string, number>;
+  /** Scraped source bundles keyed by entity id, for live records. */
+  evidenceMap?: Record<string, BuiltEntity>;
 }
 
-export const SearchResults = ({ results, similarities = {} }: SearchResultsProps) => {
+export const SearchResults = ({ results, evidenceMap = {} }: SearchResultsProps) => {
   // Store search results in sessionStorage for later reference
   if (results.length > 0) {
     sessionStorage.setItem('lastSearchResults', JSON.stringify(results));
@@ -38,7 +39,7 @@ export const SearchResults = ({ results, similarities = {} }: SearchResultsProps
             key={entity.id} 
             className="block transition-all"
           >
-            <EntityCard {...entity} similarity={similarities[entity.id]} linked />
+            <EntityCard {...entity} linked evidence={evidenceMap[entity.id]} />
           </Link>
         ))}
       </div>

@@ -147,8 +147,12 @@ export const analyzeTransparency = async (entity: EntityData): Promise<Transpare
     entity.ethicalScore > 10 ? entity.ethicalScore : Math.round(entity.ethicalScore * 10);
 
   const dimensions: DimensionResult[] = [];
+  // BERT context is 512 tokens; feed a focused premise per dimension instead
+  // of the whole scraped record.
+  const PREMISE_LIMIT = 2200;
   for (const dim of DIMENSIONS) {
-    const { evidence, evidenceFrom } = collectEvidence(entity, dim.evidenceFields);
+    const { evidence: rawEvidence, evidenceFrom } = collectEvidence(entity, dim.evidenceFields);
+    const evidence = rawEvidence.length > PREMISE_LIMIT ? rawEvidence.slice(0, PREMISE_LIMIT) : rawEvidence;
     if (evidence.trim().length < dim.minEvidenceChars) {
       dimensions.push({
         id: dim.id,
@@ -211,9 +215,8 @@ export const analyzeTransparency = async (entity: EntityData): Promise<Transpare
     blendedScore,
     dimensions,
     provenance: [
-      'catalog rule score (deterministic)',
-      `${MODELS_NLI_SHORT} zero-shot entailment (on-device)`,
-      'semantic index: MiniLM embeddings (on-device)',
+      'deterministic score (catalog for samples, evidence coverage for live records)',
+      `${MODELS_NLI_SHORT} zero-shot entailment (on-device) applied to scraped evidence`,
     ],
   };
 };
