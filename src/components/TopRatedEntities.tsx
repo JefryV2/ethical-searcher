@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { EntityData, mockEthicalData } from '@/services/ethicalDataService';
 import { EntityCard } from '@/components/EntityCard';
-import { Star, Award, Trophy, Info, SlidersHorizontal } from 'lucide-react';
+import { Info, SlidersHorizontal } from 'lucide-react';
 import { 
   Carousel,
   CarouselContent,
@@ -59,8 +59,10 @@ export const TopRatedEntities = () => {
       
       <div className="mb-12">
         <div className="flex items-center gap-2 mb-6">
-          <Trophy className="text-primary h-6 w-6" />
-          <h2 className="text-2xl font-bold">Top Ethical Companies</h2>
+          <h2 className="ds-text-title-lg flex items-center gap-3">
+            Top Ethical Companies
+            <span className="ds-text-label-sm text-muted-foreground font-normal uppercase tracking-wider">sample</span>
+          </h2>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -99,8 +101,10 @@ export const TopRatedEntities = () => {
 
       <div>
         <div className="flex items-center gap-2 mb-6">
-          <Star className="text-primary h-6 w-6" />
-          <h2 className="text-2xl font-bold">Top Ethical Content Creators</h2>
+          <h2 className="ds-text-title-lg flex items-center gap-3">
+            Top Ethical Content Creators
+            <span className="ds-text-label-sm text-muted-foreground font-normal uppercase tracking-wider">sample</span>
+          </h2>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

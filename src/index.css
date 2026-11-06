@@ -1,30 +1,43 @@
 
+@import './styles/ds-tokens.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   shadcn bridge — maps the OpenDesigner token system onto the component
+   library's HSL triplets. Light values come from the generated light theme,
+   dark values from the generated dark theme. Never hardcode colors here.
+--------------------------------------------------------------------------- */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* neutral surfaces: token values #fdfdfd/#242424/#d2d2d2/#f4f4f4/#646464 */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 240 5% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 255, 73%, 74%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 217 92% 91%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 0 0% 13%;
+    /* accent step 9: #0f766e */
+    --primary: 174 77% 26%;
+    --primary-foreground: 0 0% 100%;
+    /* accent step 3: #e1eeec */
+    --secondary: 169 14% 91%;
+    --secondary-foreground: 227 8% 15%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 39%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 13%;
+    /* danger step 9: #bd554c */
+    --destructive: 5 43% 52%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 255, 73%, 74%;
-    --radius: 0.75rem;
+    /* neutral step 6: #d2d2d2 */
+    --border: 0 0% 82%;
+    --input: 0 0% 82%;
+    --ring: 174 77% 26%;
+    /* container radius 8px, control 6px via md/sm calc */
+    --radius: 0.5rem;
   }
 }
 
@@ -34,21 +47,102 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--ds-font-family-text);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--ds-font-weight-heading);
   }
 }
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light-only) {
+    /* neutral dark: token values #151515/#e9e9e9/#252525/#2d2d2d/#959595/#3f3f3f */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 91%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 91%;
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 91%;
+    /* accent dark step 9: #379188 */
+    --primary: 172 45% 39%;
+    --primary-foreground: 0 0% 8%;
+    /* accent dark step 4: #1d3330 */
+    --secondary: 174 26% 16%;
+    --secondary-foreground: 0 0% 91%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 59%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 91%;
+    /* danger dark step 9: #c26c63 */
+    --destructive: 5 42% 57%;
+    --destructive-foreground: 0 0% 8%;
+    /* neutral dark step 6: #3f3f3f */
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 172 45% 39%;
+  }
+}
+
+/* Scores are numbers before they are prose: always tabular figures. */
+.score-num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Score states pull from the generated success/warning/danger text tokens
+   so both themes keep real contrast (no raw Tailwind palette colors). */
+.score-good { color: var(--ds-color-text-success); }
+.score-mid  { color: var(--ds-color-text-warning); }
+.score-low  { color: var(--ds-color-text-danger); }
+
+/* Soft warning panel for issue mentions. */
+.bg-warning-subtle { background-color: var(--ds-color-bg-warning-subtle); }
 
 .search-container {
   @apply relative w-full max-w-2xl mx-auto;
 }
 
+/* A card is a raised surface: solid fill, one hairline border, one small
+   offset shadow. No blur, no transparency, no floating glow. */
 .glass-card {
-  @apply backdrop-blur-sm bg-white/30 border border-white/40 rounded-lg shadow-lg transition-all duration-300;
+  @apply bg-card border border-border rounded-lg;
+  box-shadow: var(--ds-elevation-raised);
 }
 
-.fade-in-element {
-  @apply animate-in fade-in duration-500;
+.transition-standard {
+  transition-timing-function: var(--ds-motion-easing-standard);
 }
 
-.slide-in-element {
-  @apply animate-in slide-in-from-bottom-4 duration-500;
+.hover-lift {
+  transition: transform var(--ds-motion-transition-enter-duration) var(--ds-motion-easing-enter),
+              box-shadow var(--ds-motion-transition-exit-duration) var(--ds-motion-easing-exit);
+}
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--ds-elevation-floating);
+}
+
+@keyframes od-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes od-slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in-element {
+    animation: od-fade-in var(--ds-motion-transition-enter-duration) var(--ds-motion-easing-enter);
+  }
+  .slide-in-element {
+    animation: od-slide-in var(--ds-motion-transition-enter-duration) var(--ds-motion-easing-enter);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-in-element,
+  .slide-in-element {
+    animation: none;
+  }
 }

@@ -39,6 +39,14 @@ export interface EntityProps {
   evidence?: BuiltEntity;
 }
 
+/* Score bands use the design system's semantic text colors, not the raw
+   Tailwind palette — they stay readable in both themes. */
+const scoreTone = (score: number): string => {
+  if (score >= 70) return "score-good";
+  if (score >= 50) return "score-mid";
+  return "score-low";
+};
+
 export const EntityCard = ({ 
   name, 
   type, 
@@ -60,19 +68,13 @@ export const EntityCard = ({
   const isLiveRecord = !!evidence;
   const siteSources = evidence?.entity.sources ?? [];
   const pageSize = evidence ? evidence.siteAudit.reachable : 0;
-
-  // Determine score color
-  const getScoreColor = (score: number) => {
-    if (score >= 70) return "text-green-500";
-    if (score >= 50) return "text-amber-500";
-    return "text-red-500";
-  };
+  const tone = scoreTone(displayScore);
 
   // Website link is interactive only when the card is not itself wrapped in a
   // <Link> — an <a> nested inside an <a> is invalid and React warns about it.
   return (
-    <Card className="glass-card hover:scale-[1.02] p-6 space-y-4 overflow-hidden">
-      <div className="flex items-start justify-between">
+    <Card className="glass-card hover-lift p-6 space-y-4 overflow-hidden">
+      <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {thumbnailUrl ? (
             <img src={thumbnailUrl} alt="" className="w-10 h-10 rounded-full object-cover" />
@@ -82,27 +84,17 @@ export const EntityCard = ({
             <User className="w-6 h-6 text-primary shrink-0" />
           )}
           <div className="min-w-0">
-            <h3 className="text-lg font-semibold truncate">{name}</h3>
-            <p className="text-sm text-muted-foreground capitalize">{type}</p>
+            <h3 className="ds-text-title-md truncate">{name}</h3>
+            <p className="ds-text-label-sm text-muted-foreground capitalize">{type}</p>
           </div>
         </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2 cursor-help shrink-0">
-                {similarity !== undefined && (
-                  <Badge variant="outline" className="text-primary border-primary/40">
-                    {Math.round(similarity * 100)}% match
-                  </Badge>
-                )}
-                {isLiveRecord && (
-                  <Badge variant="outline" className="text-blue-600 border-blue-300">
-                    <FileText className="w-3 h-3 mr-1" />
-                    {siteSources.length} sources
-                  </Badge>
-                )}
-                <ShieldCheck className={`w-5 h-5 ${getScoreColor(displayScore)}`} />
-                <span className={`font-medium ${getScoreColor(displayScore)}`}>{displayScore}/100</span>
+              <div className={`flex items-baseline gap-1 cursor-help shrink-0 score-num ${tone}`}>
+                <span className="ds-text-numeric-lg leading-none">{displayScore}</span>
+                <span className="ds-text-body-sm text-muted-foreground">/100</span>
+                <ShieldCheck className={`w-4 h-4 -mb-1 ml-1 ${tone}`} />
               </div>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
@@ -113,17 +105,31 @@ export const EntityCard = ({
                   It says what a reader can verify — not whether the entity is ethical.
                 </p>
               ) : (
-                <p>Ethics Score: Based on environmental impact, labor practices, and social responsibility{similarity !== undefined && " · '% match' is the embedding similarity from the on-device model"}</p>
+                <p>Sample catalog score{similarity !== undefined && " · '% match' is the embedding similarity from the on-device model"}</p>
               )}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      {(similarity !== undefined || isLiveRecord) && (
+        <div className="flex flex-wrap gap-2 -mt-2">
+          {similarity !== undefined && (
+            <Badge variant="secondary">{Math.round(similarity * 100)}% match</Badge>
+          )}
+          {isLiveRecord && (
+            <Badge variant="secondary" className="gap-1">
+              <FileText className="w-3 h-3" />
+              {siteSources.length} sources
+            </Badge>
+          )}
+        </div>
+      )}
       
       {website && (
-        <div className="text-sm text-primary">
+        <div className="ds-text-body-sm text-primary">
           {linked ? (
-            <span className="hover:underline truncate block">{website}</span>
+            <span className="truncate block">{website}</span>
           ) : (
             <a href={website} target="_blank" rel="noopener noreferrer" className="hover:underline">{website}</a>
           )}
@@ -133,39 +139,38 @@ export const EntityCard = ({
       {platformLinks && platformLinks.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {platformLinks.map((p) => (
-            <Badge key={p.url} variant="outline" className="text-muted-foreground">
-              <Upload className="w-3 h-3 mr-1" />
+            <Badge key={p.url} variant="outline" className="text-muted-foreground font-normal">
               {p.label}
             </Badge>
           ))}
         </div>
       )}
       
-      <p className="text-sm text-muted-foreground">{description}</p>
+      <p className="ds-text-body-sm text-muted-foreground">{description}</p>
       
       {isLiveRecord && evidence && (
-        <div className="bg-secondary/20 p-3 rounded-md text-sm">
+        <div className="bg-secondary/40 p-3 rounded-md">
           <div className="flex items-center gap-2 mb-1">
             <Info className="w-4 h-4 text-primary" />
-            <span className="font-medium">Scraped evidence</span>
+            <span className="ds-text-body-sm font-medium">Scraped evidence</span>
           </div>
-          <ul className="text-xs text-muted-foreground space-y-1">
+          <ul className="ds-text-body-sm text-muted-foreground space-y-1">
             {siteSources.slice(0, 4).map((s) => (
               <li key={s.url} className="truncate">
-                <span className="uppercase text-[10px] mr-1 text-muted-foreground/70">{s.provider}</span>
+                <span className="ds-text-label-sm text-muted-foreground/70 mr-1">{s.provider}</span>
                 {s.title}
               </li>
             ))}
           </ul>
           {evidence.siteAudit.signals.length > 0 && (
-            <p className="text-xs mt-2">
+            <p className="ds-text-body-sm mt-2">
               {evidence.siteAudit.signals.length} transparency signal
               {evidence.siteAudit.signals.length === 1 ? '' : 's'} detected:
               {' '}{evidence.siteAudit.signals.slice(0, 3).map((s) => s.label).join(', ')}
             </p>
           )}
           {evidence.siteAudit.pages.length > 0 && evidence.siteAudit.reachable === 0 && (
-            <p className="text-xs mt-2 text-amber-600 dark:text-amber-400">
+            <p className="ds-text-body-sm mt-2 score-mid">
               The official site could not be read ({evidence.siteAudit.pages[0].error ?? 'unknown reason'}) —
               the record currently rests on Wikidata and Wikipedia only.
             </p>
@@ -174,12 +179,12 @@ export const EntityCard = ({
       )}
       
       {!isLiveRecord && ethical_analysis && (
-        <div className="bg-secondary/20 p-3 rounded-md text-sm">
+        <div className="bg-secondary/40 p-3 rounded-md">
           <div className="flex items-center gap-2 mb-1">
             <Info className="w-4 h-4 text-primary" />
-            <span className="font-medium">Record summary</span>
+            <span className="ds-text-body-sm font-medium">Record summary</span>
           </div>
-          <p className="text-muted-foreground line-clamp-6">
+          <p className="ds-text-body-sm text-muted-foreground line-clamp-6">
             {ethical_analysis.length > 420
               ? `${ethical_analysis.slice(0, 420).trimEnd()}… Full evidence on the detail page.`
               : ethical_analysis}
@@ -190,12 +195,12 @@ export const EntityCard = ({
       {certifications && certifications.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-green-500" />
-            <span className="text-sm font-medium">Certifications</span>
+            <Award className="w-4 h-4 text-primary" />
+            <span className="ds-text-body-sm font-medium">Certifications</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {certifications.map((cert, index) => (
-              <Badge key={index} variant="outline" className="bg-green-500/10 text-green-700 border-green-200">
+              <Badge key={index} variant="secondary">
                 {cert}
               </Badge>
             ))}
@@ -206,20 +211,20 @@ export const EntityCard = ({
       {controversies && controversies.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-medium">{isLiveRecord ? 'Issue-related mentions' : 'Known Controversies'}</span>
+            <AlertTriangle className="w-4 h-4 score-mid" />
+            <span className="ds-text-body-sm font-medium">{isLiveRecord ? 'Issue-related mentions' : 'Known Controversies'}</span>
           </div>
           <div className="space-y-2 max-h-32 overflow-y-auto pr-2">
             {controversies.map((controversy, index) => (
-              <div key={index} className="bg-amber-500/10 p-2 rounded-md text-xs">
-                <p className="font-medium">{controversy.title}</p>
-                <p className="text-muted-foreground">{controversy.description}</p>
+              <div key={index} className="bg-warning-subtle p-2 rounded-md">
+                <p className="ds-text-body-sm font-medium">{controversy.title}</p>
+                <p className="ds-text-body-sm text-muted-foreground">{controversy.description}</p>
                 <div className="flex items-center justify-between mt-1">
-                  {controversy.date && <p className="text-xs opacity-70">{new Date(controversy.date).toLocaleDateString()}</p>}
+                  {controversy.date && <p className="ds-text-body-sm text-muted-foreground">{new Date(controversy.date).toLocaleDateString()}</p>}
                   {controversy.source_url && !linked && (
                     <a 
                       href={controversy.source_url} 
-                      className="flex items-center gap-1 text-primary text-xs hover:underline"
+                      className="flex items-center gap-1 text-primary ds-text-body-sm hover:underline"
                       target="_blank" 
                       rel="noopener noreferrer"
                     >

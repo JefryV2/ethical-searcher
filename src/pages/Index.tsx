@@ -109,7 +109,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-secondary/20 to-background">
+    <div className="min-h-svh bg-background">
       <main className="container mx-auto">
         <SearchHero onSearch={handleSearch} isSearching={isSearching} searchStatus={searchStatus} />
         
@@ -121,7 +121,7 @@ const Index = () => {
           <>
             {failedNotice && (
               <div className="w-full max-w-6xl mx-auto px-4 mb-4">
-                <p className="text-amber-500 text-sm bg-amber-50 dark:bg-amber-950/30 p-2 rounded-md">
+                <p className="score-mid ds-text-body-sm bg-warning-subtle p-2 rounded-md">
                   {failedNotice}
                 </p>
               </div>

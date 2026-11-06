@@ -31,13 +31,13 @@ export const SearchResults = ({ results, evidenceMap = {} }: SearchResultsProps)
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold mb-6">Search Results</h2>
+      <h2 className="ds-text-headline-sm mb-6">Search Results</h2>
       <div className="grid gap-6 md:grid-cols-2">
         {results.map((entity) => (
           <Link 
             to={`/entity/${entity.id}`} 
             key={entity.id} 
-            className="block transition-all"
+            className="block transition-colors"
           >
             <EntityCard {...entity} linked evidence={evidenceMap[entity.id]} />
           </Link>
