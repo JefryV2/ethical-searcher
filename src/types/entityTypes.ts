@@ -30,6 +30,8 @@ export interface SourceRef {
   url: string;
   /** Short evidence excerpt the app extracted from this source, if any. */
   excerpt?: string;
+  /** When this source was last fetched (ISO) — shown as "checked … ago". */
+  fetchedAt?: string;
 }
 
 export interface EntityData {

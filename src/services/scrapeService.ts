@@ -26,6 +26,8 @@ export interface ScrapedPage {
   status?: number;
   text?: string;
   error?: string;
+  /** ISO timestamp of the fetch — shown to the user as "last checked". */
+  fetchedAt?: string;
 }
 
 export interface TransparencySignal {
@@ -103,6 +105,13 @@ const localAvailable = (): Promise<boolean> => {
   return localProbe;
 };
 
+/** Epoch seconds from the microservice become an ISO stamp; undefined stays
+ *  undefined so the caller can fall back to its own timestamp. */
+const fromEpoch = (seconds?: number | null): string | undefined =>
+  typeof seconds === 'number' && seconds > 0
+    ? new Date(seconds * 1000).toISOString()
+    : undefined;
+
 /** Read one page through the local Scrapling microservice. */
 const readViaLocal = async (url: string): Promise<ScrapedPage> => {
   const response = await fetchTimeout(
@@ -118,6 +127,7 @@ const readViaLocal = async (url: string): Promise<ScrapedPage> => {
     text?: string | null;
     error?: string | null;
     status?: number | null;
+    fetched_at?: number | null;
   };
   if (!data.ok) {
     return {
@@ -125,6 +135,7 @@ const readViaLocal = async (url: string): Promise<ScrapedPage> => {
       ok: false,
       status: data.status ?? undefined,
       error: data.error ?? 'local scraper reported failure',
+      fetchedAt: fromEpoch(data.fetched_at),
     };
   }
   const text = (data.text ?? '').slice(0, MAX_TEXT_CHARS);
@@ -134,8 +145,59 @@ const readViaLocal = async (url: string): Promise<ScrapedPage> => {
       ok: text.trim().length > 40,
       status: data.status ?? undefined,
       text,
+      fetchedAt: fromEpoch(data.fetched_at) ?? new Date().toISOString(),
     }
   );
+};
+
+/** Read several pages of one site in one round-trip through the local
+ *  microservice, which fetches them in parallel threads. The server caps
+ *  the batch and refuses URLs from other hosts, so this can never be
+ *  abused as a general crawler. */
+const crawlViaLocal = async (urls: string[]): Promise<ScrapedPage[]> => {
+  const response = await fetchTimeout(
+    `${LOCAL_READER}/crawl?urls=${encodeURIComponent(urls.join(','))}`,
+    45000,
+  );
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const data = await response.json() as {
+    results?: Array<{
+      url: string;
+      ok: boolean;
+      final_url?: string | null;
+      text?: string | null;
+      error?: string | null;
+      status?: number | null;
+      fetched_at?: number | null;
+    }>;
+  };
+  const results = data.results ?? [];
+  return urls.map((url) => {
+    const result = results.find((r) => r.url === url);
+    if (!result) {
+      return { url, ok: false, error: 'not returned by the crawl service' as const };
+    }
+    const stamp = fromEpoch(result.fetched_at);
+    if (!result.ok) {
+      return {
+        url,
+        ok: false,
+        status: result.status ?? undefined,
+        error: result.error ?? 'local scraper reported failure',
+        fetchedAt: stamp,
+      };
+    }
+    const text = (result.text ?? '').slice(0, MAX_TEXT_CHARS);
+    return (
+      refuseCrossHost(url, result.final_url ?? undefined) ?? {
+        url,
+        ok: text.trim().length > 40,
+        status: result.status ?? undefined,
+        text,
+        fetchedAt: stamp ?? new Date().toISOString(),
+      }
+    );
+  });
 };
 
 /** Read one page: local Scrapling service when running, otherwise the
@@ -176,6 +238,7 @@ const readViaJina = async (url: string): Promise<ScrapedPage> => {
         ok: text.trim().length > 40,
         status: response.status,
         text,
+        fetchedAt: new Date().toISOString(),
       }
     );
   } catch (error) {
@@ -185,6 +248,7 @@ const readViaJina = async (url: string): Promise<ScrapedPage> => {
       error: error instanceof Error
         ? (error.name === 'AbortError' ? 'timed out' : error.message)
         : 'read failed',
+      fetchedAt: new Date().toISOString(),
     };
   }
 };
@@ -247,7 +311,8 @@ const scanPage = (page: ScrapedPage): TransparencySignal[] => {
   return signals;
 };
 
-/** Candidate pages worth reading for a transparency audit. */
+/** Candidate pages worth reading for a transparency audit: the landing page
+ *  plus the disclosure-ish paths companies and creators actually use. */
 export const auditUrlCandidates = (officialUrl: string): string[] => {
   const base = officialUrl.replace(/\/$/, '');
   const origin = new URL(base).origin;
@@ -255,16 +320,40 @@ export const auditUrlCandidates = (officialUrl: string): string[] => {
     base,
     `${base}/about`,
     `${origin}/about`,
-    `${base}/disclosure`,
+    `${base}/sustainability`,
+    `${origin}/sustainability`,
+    `${base}/ethics`,
+    `${base}/transparency`,
     `${origin}/transparency`,
+    `${base}/press`,
+    `${base}/disclosure`,
   ];
   return Array.from(new Set(candidates));
 };
 
+/** Fallback audit path: read pages one at a time through whichever reader is
+ *  available. Keeps the free proxy path polite (sequential, capped) while the
+ *  local service does the deep parallel crawl. */
+const sequentialAudit = async (candidates: string[], maxAttempts: number): Promise<ScrapedPage[]> => {
+  const pages: ScrapedPage[] = [];
+  let good = 0;
+  for (const candidate of candidates.slice(0, maxAttempts)) {
+    const page = await readPage(candidate);
+    pages.push(page);
+    if (page.ok) {
+      good += 1;
+      if (good >= 3) break;
+    }
+  }
+  return pages;
+};
+
 /**
- * Audit an entity's official website: read the homepage first, then about /
- * disclosure pages only if the homepage answered. Sequential to be a good
- * citizen of the free reader proxy; stops after two readable pages.
+ * Audit an entity's official website. With the local Scrapling service
+ * running, up to eight candidate pages (home, about, sustainability, ethics,
+ * transparency, press…) are fetched in parallel in one round-trip. Without
+ * it, the fallback reads a few pages sequentially through the free reader and
+ * says less — honestly.
  */
 export const auditSite = async (officialUrl?: string): Promise<SiteAudit> => {
   if (!officialUrl) {
@@ -281,17 +370,21 @@ export const auditSite = async (officialUrl?: string): Promise<SiteAudit> => {
     return { officialUrl: cleanUrl, pages: [], signals: [], reachable: 0 };
   }
 
-  const pages: ScrapedPage[] = [];
-  let good = 0;
-  for (const candidate of candidates) {
-    const page = await readPage(candidate);
-    pages.push(page);
-    if (page.ok) {
-      good += 1;
-      if (good >= 2) break;
+  let pages: ScrapedPage[];
+  if (await localAvailable()) {
+    try {
+      pages = await crawlViaLocal(candidates.slice(0, 8));
+    } catch {
+      // Service died between the health check and the crawl — fall back and
+      // re-probe on the next audit.
+      localProbe = null;
+      pages = await sequentialAudit(candidates, 6);
     }
+  } else {
+    pages = await sequentialAudit(candidates, 6);
   }
 
+  const good = pages.filter((p) => p.ok).length;
   const seenKinds = new Set<string>();
   const signals = pages
     .flatMap(scanPage)

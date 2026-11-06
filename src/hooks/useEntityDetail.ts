@@ -9,21 +9,6 @@ export const useEntityDetail = (id: string | undefined) => {
   const { toast } = useToast();
   const [entity, setEntity] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [customWeights, setCustomWeights] = useState<Record<string, number>>({});
-  const [showWeightsInfo, setShowWeightsInfo] = useState(true);
-  const [showCustomWeights, setShowCustomWeights] = useState(false);
-
-  useEffect(() => {
-    const savedWeights = localStorage.getItem('customEthicalWeights');
-    if (savedWeights) {
-      try {
-        setCustomWeights(JSON.parse(savedWeights));
-      } catch (error) {
-        console.error("Error parsing saved weights:", error);
-        localStorage.removeItem('customEthicalWeights');
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const fetchEntityData = async () => {
@@ -114,38 +99,8 @@ export const useEntityDetail = (id: string | undefined) => {
     fetchEntityData();
   }, [id, navigate, toast]);
 
-  const handleSaveWeights = (weights: Record<string, number>) => {
-    setCustomWeights(weights);
-    localStorage.setItem('customEthicalWeights', JSON.stringify(weights));
-    
-    if (Object.keys(weights).length > 0) {
-      toast({
-        title: "Weights Updated",
-        description: "Entity scores will now reflect your personal values",
-      });
-    } else {
-      toast({
-        title: "Using Default Weights",
-        description: "Entity scores will use the standard algorithm",
-      });
-    }
-
-    setShowWeightsInfo(false);
-    setShowCustomWeights(false);
-  };
-
-  const toggleCustomWeights = () => {
-    setShowCustomWeights(!showCustomWeights);
-  };
-
   return {
     entity,
-    loading,
-    customWeights,
-    showWeightsInfo,
-    showCustomWeights,
-    setShowWeightsInfo,
-    toggleCustomWeights,
-    handleSaveWeights
+    loading
   };
 };

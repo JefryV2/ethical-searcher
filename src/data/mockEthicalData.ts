@@ -1,7 +1,10 @@
 
 import { EntityData } from '@/types/entityTypes';
 
-// Mock data to use as fallback when the API fails
+// Curated sample catalog — kept small and clearly labeled as "sample".
+// It only serves as the fallback when no live public record (Wikidata,
+// Wikipedia, official site) can be found for a query, so the demo data
+// never masquerades as a live lookup.
 export const mockEthicalData: EntityData[] = [
   {
     id: "1",
@@ -24,18 +27,6 @@ export const mockEthicalData: EntityData[] = [
   },
   {
     id: "2",
-    name: "Green Future Investments",
-    type: "company",
-    description: "Financial institution specializing in green investments and sustainable development funding.",
-    ethicalScore: 92,
-    categories: ["Finance", "Sustainability", "Investment"],
-    certifications: ["Principles for Responsible Investment", "Global Impact Investing Rating", "Climate Bonds Standard"],
-    controversies: [],
-    website: "https://greenfutureinvest.com",
-    ethical_analysis: "Transparent investment policies with rigorous environmental and social governance standards. Consistently avoids fossil fuel investments. Industry leader in sustainability reporting."
-  },
-  {
-    id: "3",
     name: "Natural Wellness Co",
     type: "company",
     description: "Health and wellness product manufacturer using only organic and sustainably sourced ingredients.",
@@ -54,7 +45,7 @@ export const mockEthicalData: EntityData[] = [
     ethical_analysis: "Strong ingredient sourcing practices but had packaging concerns that were subsequently addressed. New packaging goals exceed industry standards for sustainability."
   },
   {
-    id: "4",
+    id: "3",
     name: "Maya Rodriguez",
     type: "creator",
     description: "Environmental activist and content creator focusing on sustainable lifestyle education.",
@@ -102,19 +93,7 @@ export const mockEthicalData: EntityData[] = [
     ]
   },
   {
-    id: "5",
-    name: "Ethical Consumer Media",
-    type: "company",
-    description: "Digital media platform providing ethical product reviews and corporate responsibility reporting.",
-    ethicalScore: 90,
-    categories: ["Media", "Consumer Advocacy", "Transparency"],
-    certifications: ["Independent Press Standards", "Transparency in Publishing"],
-    controversies: [],
-    website: "https://ethicalconsumermedia.org",
-    ethical_analysis: "Operates with full financial transparency and strict editorial independence policies. Refuses advertising from companies scoring below threshold on their own rating system."
-  },
-  {
-    id: "6",
+    id: "4",
     name: "James Chen",
     type: "creator",
     description: "Tech influencer focused on sustainable technology and ethical electronics consumption.",
@@ -169,7 +148,7 @@ export const mockEthicalData: EntityData[] = [
     ]
   },
   {
-    id: "7",
+    id: "5",
     name: "Circular Fashion House",
     type: "company",
     description: "Sustainable fashion brand operating on circular economy principles.",
@@ -181,55 +160,7 @@ export const mockEthicalData: EntityData[] = [
     ethical_analysis: "Industry-leading circular business model with transparent supply chain reporting. All products designed for complete recyclability. Living wage certification across entire manufacturing network."
   },
   {
-    id: "8",
-    name: "Alex Murray",
-    type: "creator",
-    description: "Financial educator focusing on ethical investing and sustainable financial planning.",
-    ethicalScore: 86,
-    categories: ["Finance", "Education", "Investing"],
-    certifications: ["Certified Financial Planner", "ESG Investment Advisor"],
-    controversies: [],
-    website: "https://ethicalfinancewithale.com",
-    ethical_analysis: "Transparent about commission structures and income sources. Only recommends financial products meeting strict environmental and social criteria. Provides free educational content for underserved communities.",
-    disclosures: [
-      {
-        title: "Revenue Structure",
-        description: "Alex details that 40% of income comes from course sales, 30% from affiliate partnerships, 20% from consulting, and 10% from speaking engagements.",
-        link: "https://ethicalfinancewithale.com/business-model"
-      },
-      {
-        title: "Affiliate Disclosure",
-        description: "Comprehensive list of all financial relationships with companies and products mentioned in content.",
-        link: "https://ethicalfinancewithale.com/affiliates"
-      }
-    ],
-    sponsorships: [
-      {
-        company: "Ethical Investment Fund",
-        details: "Educational content series on ESG investing principles",
-        period: "2022-2023"
-      },
-      {
-        company: "Community Development Credit Union",
-        details: "Sponsored workshops on financial literacy",
-        period: "2023"
-      }
-    ],
-    charitable_work: [
-      {
-        organization: "Financial Literacy Foundation",
-        contribution: "Provides free financial education to 1,000+ individuals annually",
-        year: "2021-Present"
-      },
-      {
-        organization: "Community Investment Trust",
-        contribution: "Volunteer financial advisor for neighborhood development projects",
-        year: "2022-Present"
-      }
-    ]
-  },
-  {
-    id: "9",
+    id: "6",
     name: "Clean Future Energy",
     type: "company",
     description: "Renewable energy provider specializing in solar and wind power solutions.",
@@ -246,17 +177,5 @@ export const mockEthicalData: EntityData[] = [
     ],
     website: "https://cleanfutureenergy.com",
     ethical_analysis: "Strong overall environmental practices with industry-leading emissions reporting. Addressed wildlife concerns with evidence-based solutions and ongoing monitoring."
-  },
-  {
-    id: "10",
-    name: "Community Harvest Co-op",
-    type: "company",
-    description: "Worker-owned food cooperative focusing on local, sustainable agriculture.",
-    ethicalScore: 94,
-    categories: ["Food", "Agriculture", "Cooperative Business"],
-    certifications: ["Organic Certification", "Fair Labor Practices", "Local Food Alliance"],
-    controversies: [],
-    website: "https://communityharvestcoop.org",
-    ethical_analysis: "Exemplary labor practices with profit-sharing model and democratic governance. Industry-leading waste reduction and local sourcing standards. Community education programs on sustainable food systems."
   }
 ];

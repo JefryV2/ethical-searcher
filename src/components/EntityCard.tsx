@@ -1,14 +1,15 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Globe, User, ShieldCheck, AlertTriangle, Award, Info, ExternalLink, FileText, Upload } from 'lucide-react';
-import { 
+import { Globe, User, ShieldCheck, AlertTriangle, Award, Info, ExternalLink, FileText, Clock } from 'lucide-react';
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { BuiltEntity } from '@/services/lookupService';
+import { timeAgo } from '@/services/report';
 
 interface Controversy {
   title: string;
@@ -69,6 +70,13 @@ export const EntityCard = ({
   const siteSources = evidence?.entity.sources ?? [];
   const pageSize = evidence ? evidence.siteAudit.reachable : 0;
   const tone = scoreTone(displayScore);
+  // Newest fetch stamp across the record's sources — ISO strings sort
+  // lexicographically, so the last one is the most recent.
+  const lastChecked = siteSources
+    .map((s) => s.fetchedAt)
+    .filter((t): t is string => Boolean(t))
+    .sort()
+    .pop();
 
   // Website link is interactive only when the card is not itself wrapped in a
   // <Link> — an <a> nested inside an <a> is invalid and React warns about it.
@@ -153,6 +161,12 @@ export const EntityCard = ({
           <div className="flex items-center gap-2 mb-1">
             <Info className="w-4 h-4 text-primary" />
             <span className="ds-text-body-sm font-medium">Scraped evidence</span>
+            {lastChecked && (
+              <span className="ds-text-label-sm text-muted-foreground/70 ml-auto flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                last checked {timeAgo(lastChecked)}
+              </span>
+            )}
           </div>
           <ul className="ds-text-body-sm text-muted-foreground space-y-1">
             {siteSources.slice(0, 4).map((s) => (

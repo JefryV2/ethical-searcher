@@ -8,11 +8,14 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from time import time
 from typing import Optional
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from urllib.parse import urlparse
 
 from scrapling.fetchers import Fetcher
 
@@ -28,6 +31,8 @@ app.add_middleware(
 )
 
 MAX_TEXT_CHARS = 24_000
+MAX_CRAWL_URLS = 8
+CRAWL_WORKERS = 4
 
 
 class ReadResult(BaseModel):
@@ -37,6 +42,9 @@ class ReadResult(BaseModel):
     final_url: Optional[str] = None
     text: Optional[str] = None
     error: Optional[str] = None
+    # Epoch seconds at which this page was fetched — surfaced to the user as
+    # "last checked" so records age honestly.
+    fetched_at: Optional[float] = None
 
 
 def _read(url: str) -> ReadResult:
@@ -47,7 +55,7 @@ def _read(url: str) -> ReadResult:
 
         if status is not None and status >= 400:
             return ReadResult(url=url, ok=False, status=status, final_url=final_url,
-                              error=f"HTTP {status}")
+                              error=f"HTTP {status}", fetched_at=time())
 
         try:
             text = response.markdown() or ""
@@ -60,11 +68,12 @@ def _read(url: str) -> ReadResult:
             text = text[:MAX_TEXT_CHARS]
         if len(text) <= 40:
             return ReadResult(url=url, ok=False, status=status, final_url=final_url,
-                              error="no readable text content")
-        return ReadResult(url=url, ok=True, status=status, final_url=final_url, text=text)
+                              error="no readable text content", fetched_at=time())
+        return ReadResult(url=url, ok=True, status=status, final_url=final_url, text=text,
+                          fetched_at=time())
     except Exception as exc:  # noqa: BLE001 — failures must always be readable JSON
         reason = str(exc) or exc.__class__.__name__
-        return ReadResult(url=url, ok=False, error=reason)
+        return ReadResult(url=url, ok=False, error=reason, fetched_at=time())
 
 
 @app.get("/health")
@@ -77,3 +86,40 @@ def read(url: str = Query(min_length=8)) -> ReadResult:
     if not url.lower().startswith(("http://", "https://")):
         return ReadResult(url=url, ok=False, error="only http(s) URLs are read")
     return _read(url)
+
+
+@app.get("/crawl")
+def crawl(urls: str = Query(min_length=8)) -> dict:
+    """Read several pages of one site in parallel (a transparency audit needs
+    about / sustainability / ethics pages, not just the landing page).
+
+    All URLs must share the first URL's host, so the endpoint can never be
+    used as a general-purpose proxy. Results keep the order of the request.
+    """
+    requested = [u for u in (s.strip() for s in urls.split(",")) if u]
+    if not requested:
+        return {"results": []}
+    if not all(u.lower().startswith(("http://", "https://")) for u in requested):
+        return {"results": [ReadResult(url=u, ok=False, error="only http(s) URLs are read")
+                            for u in requested]}
+    # Cap the batch so one request cannot fan out into a crawl of arbitrary size.
+    requested = requested[:MAX_CRAWL_URLS]
+
+    try:
+        base_host = urlparse(requested[0]).netloc.replace("www.", "", 1).lower()
+    except Exception:  # noqa: BLE001
+        base_host = ""
+
+    def guarded(target: str) -> ReadResult:
+        try:
+            host = urlparse(target).netloc.replace("www.", "", 1).lower()
+            if base_host and host != base_host:
+                return ReadResult(url=target, ok=False,
+                                  error="URL does not share the first URL's host")
+        except Exception:  # noqa: BLE001
+            return ReadResult(url=target, ok=False, error="unparseable URL")
+        return _read(target)
+
+    with ThreadPoolExecutor(max_workers=CRAWL_WORKERS) as pool:
+        results = list(pool.map(guarded, requested))
+    return {"results": results}

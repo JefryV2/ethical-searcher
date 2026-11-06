@@ -13,13 +13,19 @@ import {
   resolveIndustryLabels,
   type WikidataEntity,
 } from './wikidataService';
-import { fetchWikiSummary, type WikiSummary } from './wikipediaService';
+import {
+  fetchWikiSummary,
+  fetchWikiControversySections,
+  type WikiSummary,
+  type WikiSection,
+} from './wikipediaService';
 import { auditSite, type SiteAudit } from './scrapeService';
 
 export interface BuiltEntity {
   entity: EntityData;
   siteAudit: SiteAudit;
   wiki: WikiSummary | null;
+  wikiControversySections: WikiSection[];
 }
 
 /** Deterministic 0-100 evidence coverage score with a named breakdown. */
@@ -47,18 +53,23 @@ const truncate = (text: string, chars: number): string =>
 export const buildEntityFromLookup = async (
   wd: WikidataEntity,
 ): Promise<BuiltEntity> => {
-  const [wiki, siteAudit, industries] = await Promise.all([
+  const [wiki, siteAudit, industries, controversySections] = await Promise.all([
     wd.wikipediaTitle ? fetchWikiSummary(wd.wikipediaTitle) : Promise.resolve(null),
     auditSite(wd.websiteUrl),
     resolveIndustryLabels(wd.industryQids),
+    wd.wikipediaTitle
+      ? fetchWikiControversySections(wd.wikipediaTitle).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
+  const now = new Date().toISOString();
   const sources: SourceRef[] = [
     {
       provider: 'wikidata',
       title: `Wikidata · ${wd.qid}`,
       url: `https://www.wikidata.org/wiki/${wd.qid}`,
       excerpt: wd.description || undefined,
+      fetchedAt: now,
     },
   ];
   if (wiki) {
@@ -67,6 +78,7 @@ export const buildEntityFromLookup = async (
       title: `Wikipedia · ${wiki.title}`,
       url: wiki.pageUrl,
       excerpt: truncate(wiki.extract, 220),
+      fetchedAt: now,
     });
   }
   siteAudit.pages
@@ -77,6 +89,7 @@ export const buildEntityFromLookup = async (
         provider: 'website',
         title: new URL(p.url).host + new URL(p.url).pathname,
         url: p.url,
+        fetchedAt: p.fetchedAt,
       }),
     );
 
@@ -98,6 +111,16 @@ export const buildEntityFromLookup = async (
       description: s.excerpt,
       source_url: s.pageUrl,
     }));
+  // Wikipedia's own coverage of disputes is far stronger evidence than
+  // keyword matches on the entity's marketing pages. Each entry keeps the
+  // URL of the exact section it came from.
+  controversySections.forEach((section) =>
+    controversies.push({
+      title: `${section.heading} — Wikipedia`,
+      description: truncate(section.text, 320),
+      source_url: section.url,
+    }),
+  );
 
   const platformLinks: NonNullable<EntityData['platformLinks']> = [];
   if (wd.youtubeChannelId) {
@@ -113,14 +136,21 @@ export const buildEntityFromLookup = async (
     sources.push({ provider: 'platform', title: p.label, url: p.url }),
   );
 
-  // Evidence text: Wikipedia extract plus the readable site pages, capped so
-  // the on-device NLI model gets a focused premise.
+  // Evidence text: Wikipedia extract and controversy sections plus the
+  // readable site pages, capped so the on-device NLI model gets a focused
+  // premise.
   const siteEvidence = siteAudit.pages
     .filter((p) => p.ok && p.text)
     .map((p) => p.text!.slice(0, 6000))
     .join('\n');
   const evidenceText = truncate(
-    [wiki?.extract, siteEvidence].filter(Boolean).join('\n\n'),
+    [
+      wiki?.extract,
+      ...controversySections.map((s) => `${s.heading}: ${s.text}`),
+      siteEvidence,
+    ]
+      .filter(Boolean)
+      .join('\n\n'),
     9000,
   );
 
@@ -141,7 +171,7 @@ export const buildEntityFromLookup = async (
     platformLinks: platformLinks.length ? platformLinks : undefined,
   };
 
-  return { entity, siteAudit, wiki };
+  return { entity, siteAudit, wiki, wikiControversySections: controversySections };
 };
 
 /**

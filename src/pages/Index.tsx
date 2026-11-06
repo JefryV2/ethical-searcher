@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { SearchHero } from '@/components/SearchHero';
 import { SearchResults } from '@/components/SearchResults';
-import { TopRatedEntities } from '@/components/TopRatedEntities';
+import { ExampleQueries } from '@/components/ExampleQueries';
 import { EntityData } from '@/services/ethicalDataService';
 import { lookupEntities, type BuiltEntity } from '@/services/lookupService';
 import { performFallbackSearch } from '@/services/localSearch';
@@ -114,7 +114,7 @@ const Index = () => {
         <SearchHero onSearch={handleSearch} isSearching={isSearching} searchStatus={searchStatus} />
         
         {!hasSearched && (
-          <TopRatedEntities />
+          <ExampleQueries onSearch={handleSearch} isSearching={isSearching} />
         )}
         
         {hasSearched && (
