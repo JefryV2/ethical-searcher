@@ -1,0 +1,6 @@
+# Local scraping backend for Ethical Checker (Scrapling + FastAPI).
+# Plain HTTP fetching only — no browser downloads required.
+scrapling[fetchers]>=0.3
+scrapling[rag]>=0.3
+fastapi>=0.115
+uvicorn>=0.32

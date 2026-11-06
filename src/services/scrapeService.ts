@@ -1,5 +1,13 @@
-// The scraper: reads an entity's own web presence through the free r.jina.ai
-// reader (no key) and extracts transparency-relevant evidence.
+// The scraper: reads an entity's own web presence and extracts
+// transparency-relevant evidence.
+//
+// Two keyless backends, tried in order:
+//   1. The local Scrapling microservice (scrape-api/, HTTP fetcher with
+//      browser TLS impersonation). Preferred because it fetches the real
+//      site directly, has no rate limits from our perspective, and reports
+//      the true final URL after redirects.
+//   2. The free r.jina.ai reader proxy — used when the microservice is not
+//      running (e.g., a deployed static build) or fails on this page.
 //
 // Every extracted signal keeps the page URL and a short context excerpt, so
 // the report can show where each claim of "discloses X" actually comes from.
@@ -7,6 +15,10 @@
 // as unreachable rather than silently skipped.
 
 export const READER_PREFIX = 'https://r.jina.ai/';
+
+/** Base URL of the optional local Scrapling service (scrape-api/). */
+export const LOCAL_READER =
+  localStorage.getItem('scraperUrl') ?? 'http://127.0.0.1:8022';
 
 export interface ScrapedPage {
   url: string;
@@ -65,10 +77,87 @@ const sameHost = (a: URL, b: URL): boolean => {
   return normalize(a.host) === normalize(b.host);
 };
 
+const refuseCrossHost = (url: string, finalUrlValue?: string | null): ScrapedPage | null => {
+  if (!finalUrlValue) return null;
+  try {
+    const finalUrl = new URL(finalUrlValue);
+    const requested = new URL(url);
+    if (finalUrl.protocol.startsWith('http') && !sameHost(finalUrl, requested)) {
+      return {
+        url,
+        ok: false,
+        error: `redirected to a different host (${finalUrl.host}); text discarded to avoid reading the wrong page`,
+      };
+    }
+  } catch {
+    // Unparseable final URL — keep the content, it usually means no metadata.
+  }
+  return null;
+};
+
+let localProbe: Promise<boolean> | null = null;
+const localAvailable = (): Promise<boolean> => {
+  localProbe ??= fetchTimeout(`${LOCAL_READER}/health`, 2500)
+    .then((r) => r.ok)
+    .catch(() => false);
+  return localProbe;
+};
+
+/** Read one page through the local Scrapling microservice. */
+const readViaLocal = async (url: string): Promise<ScrapedPage> => {
+  const response = await fetchTimeout(
+    `${LOCAL_READER}/read?url=${encodeURIComponent(url)}`,
+    20000,
+  );
+  if (!response.ok) {
+    return { url, ok: false, status: response.status, error: `HTTP ${response.status}` };
+  }
+  const data = await response.json() as {
+    ok: boolean;
+    final_url?: string | null;
+    text?: string | null;
+    error?: string | null;
+    status?: number | null;
+  };
+  if (!data.ok) {
+    return {
+      url,
+      ok: false,
+      status: data.status ?? undefined,
+      error: data.error ?? 'local scraper reported failure',
+    };
+  }
+  const text = (data.text ?? '').slice(0, MAX_TEXT_CHARS);
+  return (
+    refuseCrossHost(url, data.final_url ?? undefined) ?? {
+      url,
+      ok: text.trim().length > 40,
+      status: data.status ?? undefined,
+      text,
+    }
+  );
+};
+
+/** Read one page: local Scrapling service when running, otherwise the
+ *  free r.jina.ai reader. Both paths refuse cross-host redirects, so a page
+ *  that bounced through an ad tracker is never treated as the entity's site. */
+export const readPage = async (url: string): Promise<ScrapedPage> => {
+  if (await localAvailable()) {
+    try {
+      return await readViaLocal(url);
+    } catch {
+      // Service died between the health check and this call — fall through
+      // to the public reader and re-probe on the next page.
+      localProbe = null;
+    }
+  }
+  return readViaJina(url);
+};
+
 /** Read one page through the keyless reader proxy, always bypassing the
  *  reader's cache — stale snapshots can hold ad-tracker probes instead of
  *  the real page content. */
-export const readPage = async (url: string): Promise<ScrapedPage> => {
+const readViaJina = async (url: string): Promise<ScrapedPage> => {
   try {
     const response = await fetchTimeout(
       READER_PREFIX + url,
@@ -80,27 +169,15 @@ export const readPage = async (url: string): Promise<ScrapedPage> => {
     }
     const raw = await response.text();
     const { body, meta } = splitReaderPreamble(raw);
-
-    // Reader followed a redirect off-site (ad trackers, login walls): the
-    // text would describe the wrong page, so refuse it.
-    if (meta.finalUrl) {
-      try {
-        const finalUrl = new URL(meta.finalUrl);
-        const requested = new URL(url);
-        if (finalUrl.protocol.startsWith('http') && !sameHost(finalUrl, requested)) {
-          return {
-            url,
-            ok: false,
-            error: `redirected to a different host (${finalUrl.host}); text discarded to avoid reading the wrong page`,
-          };
-        }
-      } catch {
-        // Unparseable final URL — keep the content, it usually means no metadata.
-      }
-    }
-
     const text = body.length > MAX_TEXT_CHARS ? body.slice(0, MAX_TEXT_CHARS) : body;
-    return { url, ok: text.trim().length > 40, text };
+    return (
+      refuseCrossHost(url, meta.finalUrl) ?? {
+        url,
+        ok: text.trim().length > 40,
+        status: response.status,
+        text,
+      }
+    );
   } catch (error) {
     return {
       url,
