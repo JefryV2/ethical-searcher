@@ -10,7 +10,7 @@
 // it — a missing disclosure is reported, never estimated.
 
 import type { EntityData } from '@/types/entityTypes';
-import { getZeroShotClassifier } from './mlService';
+import { getZeroShotClassifier, fitToTokenBudget } from './mlService';
 
 export interface DimensionResult {
   id: string;
@@ -147,12 +147,17 @@ export const analyzeTransparency = async (entity: EntityData): Promise<Transpare
     entity.ethicalScore > 10 ? entity.ethicalScore : Math.round(entity.ethicalScore * 10);
 
   const dimensions: DimensionResult[] = [];
-  // BERT context is 512 tokens; feed a focused premise per dimension instead
-  // of the whole scraped record.
+  // A quick character trim (cheap) followed by a real token-budget fit with
+  // the model's own tokenizer (authoritative). The premise is capped well
+  // below 512 so the hypothesis text still fits: BERT runs on the pair.
   const PREMISE_LIMIT = 2200;
   for (const dim of DIMENSIONS) {
     const { evidence: rawEvidence, evidenceFrom } = collectEvidence(entity, dim.evidenceFields);
-    const evidence = rawEvidence.length > PREMISE_LIMIT ? rawEvidence.slice(0, PREMISE_LIMIT) : rawEvidence;
+    const trimmed =
+      rawEvidence.length > PREMISE_LIMIT ? rawEvidence.slice(0, PREMISE_LIMIT) : rawEvidence;
+    // If fitting fails for any reason, fall back to a character trim so
+    // conservative that even worst-case tokenization stays inside 512.
+    const evidence = await fitToTokenBudget(trimmed, 440).catch(() => trimmed.slice(0, 1000));
     if (evidence.trim().length < dim.minEvidenceChars) {
       dimensions.push({
         id: dim.id,
@@ -165,9 +170,26 @@ export const analyzeTransparency = async (entity: EntityData): Promise<Transpare
       continue;
     }
 
-    const result = await classify(evidence, [dim.positiveHypothesis, dim.negativeHypothesis], {
-      hypothesisTemplate: '{label}',
-    });
+    let result;
+    try {
+      result = await classify(evidence, [dim.positiveHypothesis, dim.negativeHypothesis], {
+        hypothesisTemplate: '{label}',
+      });
+    } catch (error) {
+      // One unreadable piece of evidence must not sink the whole analysis:
+      // this dimension is reported unscored, with the reason, like the rules say.
+      const reason = error instanceof Error ? error.message.slice(0, 120) : 'model failure';
+      console.warn('[transparency] model refused dimension', dim.id, reason);
+      dimensions.push({
+        id: dim.id,
+        label: dim.label,
+        score: null,
+        provenance: 'insufficient evidence',
+        evidenceFrom,
+        detail: `The model could not score this evidence (${reason}) — reported as unscored, not estimated.`,
+      });
+      continue;
+    }
 
     const positive = result.labels.indexOf(dim.positiveHypothesis);
     const negative = result.labels.indexOf(dim.negativeHypothesis);

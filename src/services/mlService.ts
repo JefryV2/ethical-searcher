@@ -11,7 +11,7 @@
 // Every result built on these models is reported with its provenance label
 // ("on-device model") so callers can show where a number came from.
 
-import { pipeline, env } from '@huggingface/transformers';
+import { pipeline, AutoTokenizer, env } from '@huggingface/transformers';
 
 // Models are fetched from the Hugging Face CDN and run through ONNX at runtime.
 env.allowLocalModels = false;
@@ -95,6 +95,47 @@ export const getZeroShotClassifier = (): Promise<ZeroShotClassifier> => {
     }) as unknown as Promise<ZeroShotClassifier>;
   }
   return classifierJob;
+};
+
+// The classifier only accepts strings, so the caller that feeds it scraped
+// evidence needs the model's own tokenizer to fit text into the 512-token
+// context reliably (character counts are not token counts: markdown links
+// and URLs tokenize far worse than prose).
+type Tokenizer = {
+  encode?: (text: string, options?: Record<string, unknown>) => { ids: number[] };
+  decode: (ids: number[], options?: Record<string, unknown>) => string;
+};
+
+let tokenizerJob: Promise<Tokenizer> | null = null;
+
+export const getNliTokenizer = (): Promise<Tokenizer> => {
+  if (!tokenizerJob) {
+    tokenizerJob = AutoTokenizer.from_pretrained(NLI_MODEL_ID) as unknown as Promise<Tokenizer>;
+  }
+  return tokenizerJob;
+};
+
+/**
+ * Cut text so that its token count fits within `maxTokens` wordpieces,
+ * measured with the NLI model's own tokenizer. URLs and markdown link
+ * targets are stripped first — they burn tokens without meaning anything to
+ * an entailment model.
+ */
+export const fitToTokenBudget = async (text: string, maxTokens: number): Promise<string> => {
+  const tokenizer = await getNliTokenizer();
+  const cleaned = text
+    .replace(/\(https?:\/\/[^\s)]+\)/g, '')   // markdown link targets
+    .replace(/https?:\/\/\S+/g, '');          // bare URLs
+  // Depending on transformers.js version, encode() returns a plain number
+  // array or an object holding the ids — accept both shapes.
+  const encoded = tokenizer.encode!(cleaned, { add_special_tokens: false });
+  const ids: ArrayLike<unknown> = Array.isArray(encoded)
+    ? encoded
+    : ((encoded as { ids?: unknown }).ids as ArrayLike<unknown> ?? []);
+  const total = Number(ids.length ?? 0);
+  if (total <= maxTokens) return cleaned;
+  const clipped = Array.from({ length: maxTokens }, (_, i) => Number(ids[i]));
+  return tokenizer.decode(clipped, { skip_special_tokens: true });
 };
 
 export const isEmbedderReady = () => embedderJob !== null;
