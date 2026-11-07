@@ -16,9 +16,20 @@
 
 export const READER_PREFIX = 'https://r.jina.ai/';
 
-/** Base URL of the optional local Scrapling service (scrape-api/). */
-export const LOCAL_READER =
-  localStorage.getItem('scraperUrl') ?? 'http://127.0.0.1:8022';
+export const DEFAULT_LOCAL_READER = 'http://127.0.0.1:8000';
+
+export const getLocalReaderUrl = (): string =>
+  (typeof window !== 'undefined' ? localStorage.getItem('scraperUrl') : null) ?? DEFAULT_LOCAL_READER;
+
+export const setLocalReaderUrl = (url: string): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('scraperUrl', url.trim());
+    localProbe = null;
+  }
+};
+
+/** Base URL of the optional local Scrapling service (scrape-api/). Defaults to port 8000. */
+export const LOCAL_READER = getLocalReaderUrl();
 
 export interface ScrapedPage {
   url: string;
@@ -30,8 +41,15 @@ export interface ScrapedPage {
   fetchedAt?: string;
 }
 
+export type SignalKind =
+  | 'disclosure'
+  | 'sourcing'
+  | 'operations'
+  | 'controversy_response'
+  | 'conflicts';
+
 export interface TransparencySignal {
-  kind: 'disclosure' | 'sourcing' | 'operations' | 'controversy_response' | 'conflicts';
+  kind: SignalKind;
   label: string;
   pageUrl: string;
   excerpt: string;
@@ -98,11 +116,23 @@ const refuseCrossHost = (url: string, finalUrlValue?: string | null): ScrapedPag
 };
 
 let localProbe: Promise<boolean> | null = null;
-const localAvailable = (): Promise<boolean> => {
-  localProbe ??= fetchTimeout(`${LOCAL_READER}/health`, 2500)
+export const localAvailable = (): Promise<boolean> => {
+  localProbe ??= fetchTimeout(`${getLocalReaderUrl()}/health`, 2500)
     .then((r) => r.ok)
     .catch(() => false);
   return localProbe;
+};
+
+export const checkScraperBackend = async (): Promise<{
+  isLocal: boolean;
+  endpoint: string;
+}> => {
+  localProbe = null;
+  const isLocal = await localAvailable();
+  return {
+    isLocal,
+    endpoint: isLocal ? getLocalReaderUrl() : READER_PREFIX,
+  };
 };
 
 /** Epoch seconds from the microservice become an ISO stamp; undefined stays
@@ -115,7 +145,7 @@ const fromEpoch = (seconds?: number | null): string | undefined =>
 /** Read one page through the local Scrapling microservice. */
 const readViaLocal = async (url: string): Promise<ScrapedPage> => {
   const response = await fetchTimeout(
-    `${LOCAL_READER}/read?url=${encodeURIComponent(url)}`,
+    `${getLocalReaderUrl()}/read?url=${encodeURIComponent(url)}`,
     20000,
   );
   if (!response.ok) {
@@ -156,7 +186,7 @@ const readViaLocal = async (url: string): Promise<ScrapedPage> => {
  *  abused as a general crawler. */
 const crawlViaLocal = async (urls: string[]): Promise<ScrapedPage[]> => {
   const response = await fetchTimeout(
-    `${LOCAL_READER}/crawl?urls=${encodeURIComponent(urls.join(','))}`,
+    `${getLocalReaderUrl()}/crawl?urls=${encodeURIComponent(urls.join(','))}`,
     45000,
   );
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -325,6 +355,20 @@ const scanPage = (page: ScrapedPage): TransparencySignal[] => {
   }
   return signals;
 };
+
+/** The rule layer, exposed so the model lab can compare regex verdicts with
+ *  the on-device NLI model on the same text. */
+export const SIGNAL_KIND_LABELS: Record<TransparencySignal['kind'], string> = {
+  disclosure: 'Discloses sponsorships / paid partnerships',
+  sourcing: 'Cites sources for claims',
+  operations: 'Publishes reports / operational information',
+  controversy_response: 'Addresses issues / corrections',
+  conflicts: 'Discloses funding / conflicts of interest',
+};
+
+export const classifySignalKinds = (text: string): TransparencySignal['kind'][] =>
+  SIGNAL_PATTERNS.filter((pattern) => pattern.regex.test(text)).map((pattern) => pattern.kind);
+
 
 /** Candidate pages worth reading for a transparency audit: the landing page
  *  plus the disclosure-ish paths companies and creators actually use. */

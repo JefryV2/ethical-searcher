@@ -1,37 +1,39 @@
-
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const EntityNotFound = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6">
-        <Button 
-          variant="ghost" 
+    <div className="max-w-2xl mx-auto px-4 py-16 font-mono">
+      <button 
+        type="button"
+        onClick={() => navigate('/')}
+        className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 mb-8 focus:outline-none"
+      >
+        <span>&lt;--</span>
+        <span>RETURN TO SEARCH</span>
+      </button>
+
+      <div className="dossier-card p-6 space-y-4">
+        <div className="docket-strip -mx-6 -mt-6 mb-4">
+          <span>RECORD NOT FOUND IN REGISTRY</span>
+          <span>[ERR 404]</span>
+        </div>
+        <h1 className="text-lg font-bold text-foreground">
+          No matching entity found in public records
+        </h1>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Searched Wikidata, Wikipedia, and session evidence cache. No verified primary item found.
+          Verify identifier formatting (e.g. Q95) or corporate spelling.
+        </p>
+        <button
+          type="button"
           onClick={() => navigate('/')}
-          className="flex items-center gap-2"
+          className="btn-terminal px-4 py-2 text-xs"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Search
-        </Button>
+          [NEW SEARCH]
+        </button>
       </div>
-      
-      <Alert variant="destructive" className="mb-6">
-        <AlertTitle>Entity Not Found</AlertTitle>
-        <AlertDescription>
-          We couldn't find the entity you're looking for. Please try searching again.
-        </AlertDescription>
-        <Button 
-          onClick={() => navigate('/')}
-          className="mt-4"
-        >
-          Return to Search
-        </Button>
-      </Alert>
     </div>
   );
 };

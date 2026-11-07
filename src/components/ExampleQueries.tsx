@@ -1,15 +1,15 @@
+interface ExampleItem {
+  query: string;
+  kind: 'company' | 'creator';
+  focus: string;
+}
 
-import { Search, Building2, User } from 'lucide-react';
-
-/* Worked examples instead of an invented leaderboard: each chip runs a real
-   lookup through the same pipeline as the search box, so what the visitor
-   sees is what the scraper actually produced. */
-const EXAMPLES: { query: string; kind: 'company' | 'creator' }[] = [
-  { query: 'Patagonia', kind: 'company' },
-  { query: 'MrBeast', kind: 'creator' },
-  { query: 'Nike', kind: 'company' },
-  { query: 'Unilever', kind: 'company' },
-  { query: 'Marques Brownlee', kind: 'creator' },
+const EXAMPLES: ExampleItem[] = [
+  { query: 'Patagonia',        kind: 'company',  focus: 'supply chain audit' },
+  { query: 'MrBeast',         kind: 'creator',  focus: 'charitable disclosures' },
+  { query: 'Nike',            kind: 'company',  focus: 'labor disputes' },
+  { query: 'Unilever',        kind: 'company',  focus: 'sustainability claims' },
+  { query: 'Marques Brownlee', kind: 'creator',  focus: 'review disclosures' },
 ];
 
 export const ExampleQueries = ({
@@ -20,28 +20,33 @@ export const ExampleQueries = ({
   isSearching?: boolean;
 }) => {
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 pb-14 fade-in-element">
-      <h2 className="ds-text-label-sm text-muted-foreground uppercase tracking-wider text-center mb-3">
-        Try an example — live lookup, no sample scores
-      </h2>
-      <div className="flex flex-wrap justify-center gap-2">
-        {EXAMPLES.map(({ query, kind }) => (
-          <button
-            key={query}
-            type="button"
-            disabled={isSearching}
-            onClick={() => onSearch(query)}
-            className="inline-flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-card text-foreground ds-text-body-sm hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {kind === 'company' ? (
-              <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-            ) : (
-              <User className="w-3.5 h-3.5 text-muted-foreground" />
-            )}
-            {query}
-            <Search className="w-3 h-3 text-muted-foreground/60" />
-          </button>
-        ))}
+    <div className="max-w-4xl mx-auto px-4 pb-16">
+      <div className="border-t border-border pt-6">
+        <p className="font-mono text-xs text-muted-foreground mb-4">
+          // suggested queries
+        </p>
+
+        <div className="space-y-1">
+          {EXAMPLES.map(({ query, kind, focus }, i) => (
+            <button
+              key={query}
+              type="button"
+              disabled={isSearching}
+              onClick={() => onSearch(query)}
+              className="w-full flex items-baseline gap-3 px-3 py-2 text-left border border-transparent hover:border-border hover:bg-card transition-colors disabled:opacity-40 group focus:outline-none focus:border-primary"
+            >
+              <span className="font-mono text-[11px] text-muted-foreground/60 w-4 shrink-0 select-none">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <span className="font-mono text-sm text-primary group-hover:text-primary/90 font-medium min-w-[160px]">
+                {query}
+              </span>
+              <span className="font-mono text-xs text-muted-foreground">
+                {kind} · {focus}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

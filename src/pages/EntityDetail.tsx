@@ -1,7 +1,4 @@
-
 import { useParams } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, ClipboardCopy } from 'lucide-react';
 import { useEntityDetail } from '@/hooks/useEntityDetail';
 import { EntityDetailSkeleton } from '@/components/EntityDetailSkeleton';
 import { EntityNotFound } from '@/components/EntityNotFound';
@@ -25,33 +22,46 @@ const EntityDetail = () => {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <Button
-          variant="ghost"
+    <div className="container mx-auto py-8 px-4 font-mono">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <button
+          type="button"
           onClick={() => navigate('/')}
-          className="flex items-center gap-2"
+          className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5 focus:outline-none"
         >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Search
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-          onClick={async () => {
-            const copied = entity ? await copyReport(entity) : false;
-            toast({
-              title: copied ? 'Report copied' : 'Copy failed',
-              description: copied
-                ? 'Markdown report with sources and scores is on your clipboard.'
-                : 'The browser blocked clipboard access — try again or select text manually.',
-            });
-          }}
-        >
-          <ClipboardCopy className="w-4 h-4" />
-          Copy report
-        </Button>
+          <span>&lt;--</span>
+          <span>RETURN TO SEARCH</span>
+        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="btn-terminal px-3 h-8 text-xs flex items-center gap-1.5"
+            onClick={() => {
+              void navigator.clipboard.writeText(window.location.href);
+              toast({
+                title: 'URL copied',
+                description: 'Record URL placed on clipboard.',
+              });
+            }}
+          >
+            <span>[SHARE LINK]</span>
+          </button>
+          <button
+            type="button"
+            className="btn-terminal px-3 h-8 text-xs flex items-center gap-1.5"
+            onClick={async () => {
+              const copied = entity ? await copyReport(entity) : false;
+              toast({
+                title: copied ? 'Report copied' : 'Copy failed',
+                description: copied
+                  ? 'Markdown report with raw sources and scores placed on clipboard.'
+                  : 'Clipboard access blocked by browser.',
+              });
+            }}
+          >
+            <span>[EXPORT DUMP]</span>
+          </button>
+        </div>
       </div>
 
       <EntityDetailTabs entity={entity} evidence={evidence} />

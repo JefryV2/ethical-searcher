@@ -1,43 +1,98 @@
-
 @import './styles/ds-tokens.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   shadcn bridge — maps the OpenDesigner token system onto the component
-   library's HSL triplets. Light values come from the generated light theme,
-   dark values from the generated dark theme. Never hardcode colors here.
+   TRNSPR — Public Record Terminal
+   Single typeface, phosphor terminal palette.
+   Every design decision serves legibility of dense data, nothing else.
 --------------------------------------------------------------------------- */
 
 @layer base {
   :root {
-    /* neutral surfaces: token values #fdfdfd/#242424/#d2d2d2/#f4f4f4/#646464 */
-    --background: 0 0% 99%;
-    --foreground: 0 0% 13%;
+    /* Terminal phosphor green — always dark, no light mode */
+    --background: 120 8% 5%;       /* #0D0F0D — almost-black with green tint */
+    --foreground: 120 15% 80%;     /* #BECEBE — readable phosphor body text */
+    --card: 120 7% 7%;             /* #111411 — slightly lifted surface */
+    --card-foreground: 120 15% 85%; /* #C5D4C5 */
+    --popover: 120 7% 7%;
+    --popover-foreground: 120 15% 85%;
+
+    /* Phosphor green accent */
+    --primary: 120 100% 40%;       /* #00CC00 — full phosphor, used sparingly */
+    --primary-foreground: 120 8% 5%;
+
+    --secondary: 120 7% 10%;       /* #161916 — panel differentiation */
+    --secondary-foreground: 120 15% 70%;
+
+    --muted: 120 7% 10%;
+    --muted-foreground: 120 8% 48%; /* #757D75 — de-emphasized data */
+
+    --accent: 120 7% 12%;
+    --accent-foreground: 120 15% 85%;
+
+    /* Amber — warnings & mid scores */
+    --destructive: 38 100% 50%;    /* #FF9900 — amber alert */
+    --destructive-foreground: 120 8% 5%;
+
+    /* Scanline-thin borders */
+    --border: 120 20% 14%;         /* #1C241C — green-tinted separator */
+    --input: 120 20% 14%;
+    --ring: 120 100% 40%;
+
+    --radius: 0px;                  /* Terminal: zero border-radius */
+  }
+
+  /* No dark variant — this IS the dark terminal. Force class if next-themes adds 'dark' */
+  .dark,
+  [data-theme="dark"],
+  :root.dark {
+    --background: 120 8% 5%;
+    --foreground: 120 15% 80%;
+    --card: 120 7% 7%;
+    --card-foreground: 120 15% 85%;
+    --popover: 120 7% 7%;
+    --popover-foreground: 120 15% 85%;
+    --primary: 120 100% 40%;
+    --primary-foreground: 120 8% 5%;
+    --secondary: 120 7% 10%;
+    --secondary-foreground: 120 15% 70%;
+    --muted: 120 7% 10%;
+    --muted-foreground: 120 8% 48%;
+    --accent: 120 7% 12%;
+    --accent-foreground: 120 15% 85%;
+    --destructive: 38 100% 50%;
+    --destructive-foreground: 120 8% 5%;
+    --border: 120 20% 14%;
+    --input: 120 20% 14%;
+    --ring: 120 100% 40%;
+    --radius: 0px;
+  }
+
+  /* Light theme fallback — desaturated green-on-white, still terminal-spirited */
+  [data-theme="light"],
+  :root.light {
+    --background: 0 0% 98%;
+    --foreground: 120 8% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 240 5% 13%;
+    --card-foreground: 120 8% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
-    /* accent step 9: #0f766e */
-    --primary: 174 77% 26%;
-    --primary-foreground: 0 0% 100%;
-    /* accent step 3: #e1eeec */
-    --secondary: 169 14% 91%;
-    --secondary-foreground: 227 8% 15%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 39%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
-    /* danger step 9: #bd554c */
-    --destructive: 5 43% 52%;
+    --popover-foreground: 120 8% 10%;
+    --primary: 120 60% 25%;        /* #198019 — dark forest green */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 120 5% 95%;
+    --secondary-foreground: 120 8% 20%;
+    --muted: 120 5% 94%;
+    --muted-foreground: 120 5% 45%;
+    --accent: 120 5% 92%;
+    --accent-foreground: 120 8% 10%;
+    --destructive: 38 90% 40%;
     --destructive-foreground: 0 0% 98%;
-    /* neutral step 6: #d2d2d2 */
-    --border: 0 0% 82%;
-    --input: 0 0% 82%;
-    --ring: 174 77% 26%;
-    /* container radius 8px, control 6px via md/sm calc */
-    --radius: 0.5rem;
+    --border: 120 8% 86%;
+    --input: 120 8% 86%;
+    --ring: 120 60% 25%;
+    --radius: 0px;
   }
 }
 
@@ -45,109 +100,190 @@
   * {
     @apply border-border;
   }
+  html {
+    color-scheme: dark;
+  }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--ds-font-family-text);
+    font-family: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    -webkit-font-smoothing: subpixel-antialiased; /* keeps mono crisp on dark bg */
+    -moz-osx-font-smoothing: auto;
+    /* Subtle scanline overlay — faint, adds depth without gimmick */
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(120 100% 10% / 0.015) 2px,
+      hsl(120 100% 10% / 0.015) 4px
+    );
   }
   h1, h2, h3, h4, h5, h6 {
-    font-weight: var(--ds-font-weight-heading);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background-color: hsl(120 100% 40% / 0.25);
+    color: hsl(120 15% 95%);
+  }
+  /* Focus ring — phosphor style */
+  :focus-visible {
+    outline: 1px solid hsl(var(--primary));
+    outline-offset: 2px;
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.light-only) {
-    /* neutral dark: token values #151515/#e9e9e9/#252525/#2d2d2d/#959595/#3f3f3f */
-    --background: 0 0% 8%;
-    --foreground: 0 0% 91%;
-    --card: 0 0% 15%;
-    --card-foreground: 0 0% 91%;
-    --popover: 0 0% 15%;
-    --popover-foreground: 0 0% 91%;
-    /* accent dark step 9: #379188 */
-    --primary: 172 45% 39%;
-    --primary-foreground: 0 0% 8%;
-    /* accent dark step 4: #1d3330 */
-    --secondary: 174 26% 16%;
-    --secondary-foreground: 0 0% 91%;
-    --muted: 0 0% 18%;
-    --muted-foreground: 0 0% 59%;
-    --accent: 0 0% 18%;
-    --accent-foreground: 0 0% 91%;
-    /* danger dark step 9: #c26c63 */
-    --destructive: 5 42% 57%;
-    --destructive-foreground: 0 0% 8%;
-    /* neutral dark step 6: #3f3f3f */
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 172 45% 39%;
-  }
+/* ---------------------------------------------------------------------------
+   Typography
+--------------------------------------------------------------------------- */
+
+/* All type is mono — font-editorial is now a weight alias for display text */
+.font-editorial {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-/* Scores are numbers before they are prose: always tabular figures. */
+.font-ledger-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-feature-settings: "zero", "tnum";
+}
+
 .score-num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* Score states pull from the generated success/warning/danger text tokens
-   so both themes keep real contrast (no raw Tailwind palette colors). */
-.score-good { color: var(--ds-color-text-success); }
-.score-mid  { color: var(--ds-color-text-warning); }
-.score-low  { color: var(--ds-color-text-danger); }
+/* ---------------------------------------------------------------------------
+   Score tones — phosphor green / amber / red-orange
+--------------------------------------------------------------------------- */
 
-/* Matching fills for progress bars and status dots. */
-.bg-score-good { background-color: var(--ds-color-bg-success-bold); }
-.bg-score-mid  { background-color: var(--ds-color-bg-warning-bold); }
-.bg-score-low  { background-color: var(--ds-color-bg-danger-bold); }
+.score-good { color: hsl(120 100% 40%); }   /* #00CC00 phosphor */
+.score-mid  { color: hsl(38 100% 50%); }    /* #FF9900 amber */
+.score-low  { color: hsl(0 85% 55%); }      /* #E82424 alert red */
 
-/* Soft warning panel for issue mentions. */
-.bg-warning-subtle { background-color: var(--ds-color-bg-warning-subtle); }
+.bg-score-good { background-color: hsl(120 100% 40% / 0.12); border-left: 2px solid hsl(120 100% 40%); }
+.bg-score-mid  { background-color: hsl(38 100% 50% / 0.1);  border-left: 2px solid hsl(38 100% 50%); }
+.bg-score-low  { background-color: hsl(0 85% 55% / 0.1);    border-left: 2px solid hsl(0 85% 55%); }
 
-.search-container {
-  @apply relative w-full max-w-2xl mx-auto;
+.bg-warning-subtle {
+  background-color: hsl(38 100% 50% / 0.08);
+  border-left: 2px solid hsl(38 100% 50%);
 }
 
-/* A card is a raised surface: solid fill, one hairline border, one small
-   offset shadow. No blur, no transparency, no floating glow. */
+/* ---------------------------------------------------------------------------
+   Terminal Panel — the core card primitive
+   Left-border accent instead of rounded box-shadow cards
+--------------------------------------------------------------------------- */
+
+.dossier-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-left: 2px solid hsl(120 100% 40% / 0.3);
+  transition: border-left-color 0.1s;
+}
+
+.dossier-card:hover {
+  border-left-color: hsl(120 100% 40% / 0.7);
+}
+
+/* glass-card alias */
 .glass-card {
-  @apply bg-card border border-border rounded-lg;
-  box-shadow: var(--ds-elevation-raised);
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-left: 2px solid hsl(120 100% 40% / 0.25);
 }
 
-.transition-standard {
-  transition-timing-function: var(--ds-motion-easing-standard);
+/* Docket strip — file header bar */
+.docket-strip {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid hsl(var(--border));
+  padding: 0.35rem 0.875rem;
+  background-color: hsl(120 10% 7%);
+  color: hsl(120 100% 40% / 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.hover-lift {
-  transition: transform var(--ds-motion-transition-enter-duration) var(--ds-motion-easing-enter),
-              box-shadow var(--ds-motion-transition-exit-duration) var(--ds-motion-easing-exit);
-}
-.hover-lift:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--ds-elevation-floating);
-}
-
-@keyframes od-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Blinking cursor */
+.cursor-blink::after {
+  content: '█';
+  color: hsl(120 100% 40%);
+  animation: blink 1.1s step-end infinite;
+  margin-left: 2px;
+  font-size: 0.85em;
 }
 
-@keyframes od-slide-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .fade-in-element {
-    animation: od-fade-in var(--ds-motion-transition-enter-duration) var(--ds-motion-easing-enter);
-  }
-  .slide-in-element {
-    animation: od-slide-in var(--ds-motion-transition-enter-duration) var(--ds-motion-easing-enter);
-  }
+/* Prompt prefix */
+.prompt::before {
+  content: '> ';
+  color: hsl(120 100% 40%);
+  font-weight: 700;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fade-in-element,
-  .slide-in-element {
-    animation: none;
-  }
+/* Scanline grid — extremely faint, used behind hero only */
+.ledger-grid {
+  background-size: 100% 4px;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    hsl(120 100% 40% / 0.03) 3px,
+    hsl(120 100% 40% / 0.03) 4px
+  );
+}
+
+/* Fade in for tab transitions */
+.fade-in-element {
+  animation: fadeIn 0.15s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Terminal input style */
+input[type="text"], textarea {
+  caret-color: hsl(120 100% 40%);
+}
+
+/* Phosphor glow on primary buttons — single element, not scattered */
+.btn-terminal {
+  background-color: transparent;
+  border: 1px solid hsl(120 100% 40%);
+  color: hsl(120 100% 40%);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: background-color 0.1s, box-shadow 0.1s;
+}
+
+.btn-terminal:hover:not(:disabled) {
+  background-color: hsl(120 100% 40% / 0.1);
+  box-shadow: 0 0 8px hsl(120 100% 40% / 0.3);
+}
+
+.btn-terminal:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Status line — running audit indicator */
+.status-line {
+  font-size: 0.7rem;
+  color: hsl(120 100% 40% / 0.7);
+  letter-spacing: 0.04em;
 }

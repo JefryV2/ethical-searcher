@@ -3,10 +3,12 @@
 // The full BuiltEntity holds every scraped page's text (tens of kilobytes per
 // page), which would blow the sessionStorage quota. The detail page only
 // needs the audit's shape — which pages were tried, what happened, what
-// signals were found — so we persist a trimmed snapshot instead.
+// signals were found — plus citable passages for the on-device retrieval
+// features. So we persist a trimmed snapshot instead.
 
 import type { BuiltEntity } from './lookupService';
 import type { EntityData } from '@/types/entityTypes';
+import { buildPassages, type EvidencePassage } from './passages';
 
 export interface EvidenceSnapshot {
   entityId: string;
@@ -24,6 +26,9 @@ export interface EvidenceSnapshot {
     pageUrl: string;
     excerpt: string;
   }>;
+  /** Sentence-aligned evidence chunks, each with the page it came from.
+   *  Optional because snapshots saved before this field existed lack it. */
+  passages?: EvidencePassage[];
 }
 
 const KEY = 'lastEvidenceSnapshots';
@@ -34,6 +39,12 @@ const MAX_CACHED_ENTITIES = 12;
 
 export const saveEvidenceSnapshots = (built: BuiltEntity[]): void => {
   try {
+    const incomingIds = new Set(built.map((b) => String(b.entity.id)));
+    // Keep the previous search's snapshots so cross-search features (similar
+    // records) still have evidence to compare against.
+    const previous = loadAllEvidenceSnapshots().filter(
+      (snapshot) => !incomingIds.has(String(snapshot.entityId)),
+    );
     const snapshots: EvidenceSnapshot[] = built.map((b) => ({
       entityId: b.entity.id,
       reachable: b.siteAudit.reachable,
@@ -45,8 +56,12 @@ export const saveEvidenceSnapshots = (built: BuiltEntity[]): void => {
         fetchedAt: p.fetchedAt,
       })),
       signals: b.siteAudit.signals,
+      passages: buildPassages(b),
     }));
-    sessionStorage.setItem(KEY, JSON.stringify(snapshots));
+    sessionStorage.setItem(
+      KEY,
+      JSON.stringify([...snapshots, ...previous].slice(0, MAX_CACHED_ENTITIES)),
+    );
   } catch {
     // Storage full/disabled — the detail page simply shows less; it never
     // invents what it could not keep.
@@ -63,7 +78,8 @@ export const saveEvidenceSnapshots = (built: BuiltEntity[]): void => {
   }
 };
 
-const loadCachedEntities = (): EntityData[] => {
+/** Live records seen in earlier searches on this tab. */
+export const loadCachedEntities = (): EntityData[] => {
   try {
     const raw = sessionStorage.getItem(ENTITIES_KEY);
     if (!raw) return [];
@@ -86,5 +102,18 @@ export const loadEvidenceSnapshot = (id: string): EvidenceSnapshot | null => {
     return snapshots.find((s) => String(s.entityId) === String(id)) ?? null;
   } catch {
     return null;
+  }
+};
+
+/** Every stored snapshot — used to compare the current record with the
+ *  records cached from earlier searches. */
+export const loadAllEvidenceSnapshots = (): EvidenceSnapshot[] => {
+  try {
+    const raw = sessionStorage.getItem(KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as EvidenceSnapshot[]) : [];
+  } catch {
+    return [];
   }
 };

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -18,6 +19,13 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				// Terminal aesthetic: single typeface throughout
+				sans:    ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+				mono:    ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+				serif:   ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+				display: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -92,5 +100,5 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [tailwindcssAnimate],
 } satisfies Config;

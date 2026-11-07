@@ -4,7 +4,6 @@
 // instead of a silent spinner.
 
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
 import { subscribeModelProgress, type ModelProgress } from '@/services/mlService';
 
 const TASK_LABELS: Record<ModelProgress['task'], string> = {
@@ -29,11 +28,11 @@ export const ModelStatus = () => {
   if (!status) return null;
 
   return (
-    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+    <div className="flex items-center gap-2 text-xs font-mono text-primary animate-pulse">
+      <span className="font-bold select-none">[ML RUN]</span>
       <span>
-        Loading {TASK_LABELS[status.task]} model
-        {status.progress >= 0 ? ` — ${status.progress}%` : '…'}
+        Loading {TASK_LABELS[status.task]}
+        {status.progress >= 0 ? ` [${Math.round(status.progress)}%]` : '...'}
       </span>
     </div>
   );

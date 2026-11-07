@@ -96,12 +96,12 @@ const pickIssueSections = (sections: WikiSectionInfo[], limit = 3): WikiSectionI
   return [...strongOwn, ...weakOwn, ...inherited].slice(0, limit);
 };
 
-const apiFetch = async (params: Record<string, string>): Promise<any | null> => {
+const apiFetch = async (params: Record<string, string>): Promise<Record<string, unknown> | null> => {
   const search = new URLSearchParams({ format: 'json', origin: '*', redirects: '1', ...params });
   const response = await fetch(`${API}?${search}`);
   if (!response.ok) return null;
   try {
-    return await response.json();
+    return (await response.json()) as Record<string, unknown>;
   } catch {
     return null;
   }
@@ -130,7 +130,8 @@ const htmlToText = (html: string): string => {
  */
 export const fetchWikiControversySections = async (title: string): Promise<WikiSection[]> => {
   const parsed = await apiFetch({ action: 'parse', page: title, prop: 'sections' });
-  const sections: WikiSectionInfo[] = (parsed?.parse?.sections ?? []).map((s: any) => ({
+  const parseObj = parsed?.parse as { sections?: Record<string, unknown>[] } | undefined;
+  const sections: WikiSectionInfo[] = (parseObj?.sections ?? []).map((s) => ({
     index: Number(s.index),
     line: String(s.line ?? ''),
     anchor: String(s.anchor ?? ''),
