@@ -6,6 +6,7 @@
 // signals were found — so we persist a trimmed snapshot instead.
 
 import type { BuiltEntity } from './lookupService';
+import type { EntityData } from '@/types/entityTypes';
 
 export interface EvidenceSnapshot {
   entityId: string;
@@ -26,6 +27,10 @@ export interface EvidenceSnapshot {
 }
 
 const KEY = 'lastEvidenceSnapshots';
+/** The last live records themselves, so a detail page still opens after a
+ *  reload or after a different search replaced `lastSearchResults`. */
+const ENTITIES_KEY = 'lastLiveEntities';
+const MAX_CACHED_ENTITIES = 12;
 
 export const saveEvidenceSnapshots = (built: BuiltEntity[]): void => {
   try {
@@ -46,7 +51,32 @@ export const saveEvidenceSnapshots = (built: BuiltEntity[]): void => {
     // Storage full/disabled — the detail page simply shows less; it never
     // invents what it could not keep.
   }
+
+  try {
+    const incoming = built.map((b) => b.entity);
+    const incomingIds = new Set(incoming.map((e) => String(e.id)));
+    const previous = loadCachedEntities().filter((e) => !incomingIds.has(String(e.id)));
+    const merged = [...incoming, ...previous].slice(0, MAX_CACHED_ENTITIES);
+    sessionStorage.setItem(ENTITIES_KEY, JSON.stringify(merged));
+  } catch {
+    // Same as above: the search results remain the source of truth.
+  }
 };
+
+const loadCachedEntities = (): EntityData[] => {
+  try {
+    const raw = sessionStorage.getItem(ENTITIES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as EntityData[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+/** A live record seen in an earlier search on this tab, if still cached. */
+export const loadCachedEntity = (id: string): EntityData | null =>
+  loadCachedEntities().find((e) => String(e.id) === String(id)) ?? null;
 
 export const loadEvidenceSnapshot = (id: string): EvidenceSnapshot | null => {
   try {

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { mockEthicalData } from '@/data/mockEthicalData';
 import { fetchEntityByName } from '@/services/ethicalDataService';
-import { loadEvidenceSnapshot, type EvidenceSnapshot } from '@/services/evidenceStore';
+import { loadEvidenceSnapshot, loadCachedEntity, type EvidenceSnapshot } from '@/services/evidenceStore';
 
 export const useEntityDetail = (id: string | undefined) => {
   const navigate = useNavigate();
@@ -52,6 +52,16 @@ export const useEntityDetail = (id: string | undefined) => {
           }
         }
         
+        // Then, try a live record cached from an earlier search on this tab
+        // (the detail page must survive a reload or a newer search).
+        const cachedLive = loadCachedEntity(id);
+        if (cachedLive) {
+          console.log("Entity found in cached live records:", cachedLive.name);
+          setEntity(cachedLive);
+          setLoading(false);
+          return;
+        }
+
         // If not found in session storage, try mock data
         console.log("Checking mock data for entity...");
         const foundInMockData = mockEthicalData.find(e => String(e.id) === String(id));
