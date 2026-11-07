@@ -113,10 +113,14 @@ const htmlToText = (html: string): string => {
   if (typeof DOMParser === 'undefined') return '';
   const doc = new DOMParser().parseFromString(html, 'text/html');
   doc.querySelectorAll(
-    'script, style, table, .reflist, .navbox, .metadata, sup, .mw-editsection, .hatnote, .thumb, figure',
+    'script, style, table, .reflist, .references, .mw-references-wrap, .mw-cite-backlink, .navbox, .metadata, sup, .mw-editsection, .hatnote, .thumb, figure',
   ).forEach((el) => el.remove());
   const text = doc.body?.textContent ?? '';
-  return text.replace(/\s+/g, ' ').trim();
+  return text
+    .replace(/\s+\^\s+/g, ' ') // leftover citation backlink carets
+    .replace(/^\^\s*/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 };
 
 /**

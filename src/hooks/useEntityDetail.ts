@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { mockEthicalData } from '@/data/mockEthicalData';
 import { fetchEntityByName } from '@/services/ethicalDataService';
+import { loadEvidenceSnapshot, type EvidenceSnapshot } from '@/services/evidenceStore';
 
 export const useEntityDetail = (id: string | undefined) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [entity, setEntity] = useState<any>(null);
+  const [evidence, setEvidence] = useState<EvidenceSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,10 +99,12 @@ export const useEntityDetail = (id: string | undefined) => {
     };
 
     fetchEntityData();
+    setEvidence(loadEvidenceSnapshot(id));
   }, [id, navigate, toast]);
 
   return {
     entity,
+    evidence,
     loading
   };
 };

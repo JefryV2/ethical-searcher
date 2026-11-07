@@ -94,6 +94,11 @@
 .score-mid  { color: var(--ds-color-text-warning); }
 .score-low  { color: var(--ds-color-text-danger); }
 
+/* Matching fills for progress bars and status dots. */
+.bg-score-good { background-color: var(--ds-color-bg-success-bold); }
+.bg-score-mid  { background-color: var(--ds-color-bg-warning-bold); }
+.bg-score-low  { background-color: var(--ds-color-bg-danger-bold); }
+
 /* Soft warning panel for issue mentions. */
 .bg-warning-subtle { background-color: var(--ds-color-bg-warning-subtle); }
 

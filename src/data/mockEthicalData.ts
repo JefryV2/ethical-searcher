@@ -18,8 +18,7 @@ export const mockEthicalData: EntityData[] = [
       {
         title: "Supply Chain Labor Concerns",
         description: "Reports of labor issues with a component supplier in Southeast Asia which were addressed within 3 months.",
-        date: "2022-06-12",
-        source_url: "https://www.sustainabilityreport.org/ecotech-supply-chain-2022"
+        date: "2022-06-12"
       }
     ],
     website: "https://ecotechsolutions.com",
@@ -37,8 +36,7 @@ export const mockEthicalData: EntityData[] = [
       {
         title: "Packaging Criticism",
         description: "Environmental groups criticized plastic packaging, resulting in a full packaging redesign program.",
-        date: "2021-11-04",
-        source_url: "https://packagingnews.com/natural-wellness-redesign-2021"
+        date: "2021-11-04"
       }
     ],
     website: "https://naturalwellness.com",
@@ -104,8 +102,7 @@ export const mockEthicalData: EntityData[] = [
       {
         title: "Undisclosed Partnership",
         description: "Failed to disclose partnership with tech company in 2021, subsequently apologized and implemented stricter disclosure policies.",
-        date: "2021-08-15",
-        source_url: "https://influencertransparency.org/case-studies/chen-2021"
+        date: "2021-08-15"
       }
     ],
     website: "https://jameschen.tech",
@@ -171,8 +168,7 @@ export const mockEthicalData: EntityData[] = [
       {
         title: "Wind Farm Wildlife Impact",
         description: "Concerns about bird migration impacts at one wind farm location, addressed through redesigned turbines and wildlife monitoring program.",
-        date: "2020-05-22",
-        source_url: "https://renewableimpacts.org/clean-future-case-study"
+        date: "2020-05-22"
       }
     ],
     website: "https://cleanfutureenergy.com",

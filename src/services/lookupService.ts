@@ -49,6 +49,20 @@ export const evidenceCoverage = (inputs: {
 const truncate = (text: string, chars: number): string =>
   text.length > chars ? `${text.slice(0, chars).trimEnd()}…` : text;
 
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** MediaWiki includes the section heading inside the section's text, so a
+ *  description would repeat the title rendered right above it. Drop one
+ *  leading occurrence of the heading (and any trailing punctuation). */
+const stripLeadingHeading = (text: string, heading: string): string => {
+  const clean = text.trimStart();
+  if (!heading.trim()) return clean;
+  return clean.replace(
+    new RegExp(`^${escapeRegExp(heading.trim())}\\s*[:.–—-]?\\s*`, 'i'),
+    '',
+  );
+};
+
 /** Compose one EntityData from the scraped record. */
 export const buildEntityFromLookup = async (
   wd: WikidataEntity,
@@ -117,7 +131,7 @@ export const buildEntityFromLookup = async (
   controversySections.forEach((section) =>
     controversies.push({
       title: `${section.heading} — Wikipedia`,
-      description: truncate(section.text, 320),
+      description: truncate(stripLeadingHeading(section.text, section.heading), 320),
       source_url: section.url,
     }),
   );

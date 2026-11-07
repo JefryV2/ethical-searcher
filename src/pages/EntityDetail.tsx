@@ -14,7 +14,7 @@ const EntityDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { entity, loading } = useEntityDetail(id);
+  const { entity, evidence, loading } = useEntityDetail(id);
 
   if (loading) {
     return <EntityDetailSkeleton />;
@@ -54,7 +54,7 @@ const EntityDetail = () => {
         </Button>
       </div>
 
-      <EntityDetailTabs entity={entity} />
+      <EntityDetailTabs entity={entity} evidence={evidence} />
     </div>
   );
 };

@@ -253,10 +253,25 @@ const readViaJina = async (url: string): Promise<ScrapedPage> => {
   }
 };
 
+/** Pages arrive as Markdown (r.jina.ai) or plain text. Excerpts are shown as
+ *  sentences beside their source link, so link/image syntax and emphasis
+ *  markers would read as noise — reduce them to their visible text. */
+const cleanExcerpt = (text: string): string =>
+  text
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // images → nothing
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links → their label
+    .replace(/!\[[^\]]*\]\([^)]*$/g, ' ') // image cut off by the slice
+    .replace(/\[([^\]]*)\]\([^)]*$/g, '$1') // link cut off by the slice
+    .replace(/\[[^\]]*\]\[[^\]]*\]/g, ' ') // reference-style links
+    .replace(/<\/?[a-z][^>]*>/gi, ' ') // stray HTML tags
+    .replace(/[*_`#>]+/g, ' ') // emphasis / heading / quote marks
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+
 const excerptAround = (text: string, index: number, span = 180): string => {
   const start = Math.max(0, index - span / 2);
   const end = Math.min(text.length, index + span);
-  const slice = text.slice(start, end).replace(/\s+/g, ' ').trim();
+  const slice = cleanExcerpt(text.slice(start, end)).replace(/\s+/g, ' ').trim();
   return (start > 0 ? '…' : '') + slice + (end < text.length ? '…' : '');
 };
 

@@ -1,43 +1,42 @@
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { EntityCard } from '@/components/EntityCard';
+import { EntityDetailView } from '@/components/EntityDetailView';
 import { ScoringExplanation } from '@/components/ScoringExplanation';
-import { CreatorTransparency } from '@/components/CreatorTransparency';
 import { ModelTransparencyPanel } from '@/components/ModelTransparencyPanel';
+import type { EntityData } from '@/types/entityTypes';
+import type { EvidenceSnapshot } from '@/services/evidenceStore';
 
 interface EntityDetailTabsProps {
-  entity: any;
+  entity: EntityData;
+  evidence?: EvidenceSnapshot | null;
 }
 
-export const EntityDetailTabs = ({ entity }: EntityDetailTabsProps) => {
+export const EntityDetailTabs = ({ entity, evidence }: EntityDetailTabsProps) => {
   return (
-    <Tabs defaultValue="details" className="w-full max-w-5xl mx-auto">
-      <TabsList className="grid w-full grid-cols-4 mb-6">
+    <Tabs defaultValue="details" className="w-full max-w-6xl mx-auto">
+      <TabsList className="grid w-full grid-cols-3 mb-6">
         <TabsTrigger value="details">Details</TabsTrigger>
-        <TabsTrigger value="model">Model analysis</TabsTrigger>
-        {entity.type === 'creator' && (
-          <TabsTrigger value="transparency">Transparency</TabsTrigger>
-        )}
-        <TabsTrigger value="scoring">Scoring Methodology</TabsTrigger>
+        <TabsTrigger value="model">
+          <span className="sm:hidden">Model</span>
+          <span className="hidden sm:inline">Model analysis</span>
+        </TabsTrigger>
+        <TabsTrigger value="scoring">
+          <span className="sm:hidden">Scoring</span>
+          <span className="hidden sm:inline">How scoring works</span>
+        </TabsTrigger>
       </TabsList>
-      
-      <TabsContent value="details" className="space-y-6">
-        <EntityCard {...entity} />
+
+      <TabsContent value="details">
+        <EntityDetailView entity={entity} evidence={evidence} />
       </TabsContent>
-      
+
       {/* Mounted only when the tab is opened, so the model costs nothing unless used */}
-      <TabsContent value="model" className="space-y-6">
+      <TabsContent value="model">
         <ModelTransparencyPanel entity={entity} />
       </TabsContent>
-      
-      {entity.type === 'creator' && (
-        <TabsContent value="transparency" className="space-y-6">
-          <CreatorTransparency entity={entity} />
-        </TabsContent>
-      )}
-      
-      <TabsContent value="scoring" className="space-y-6">
-        <ScoringExplanation entityType={entity.type} />
+
+      <TabsContent value="scoring">
+        <ScoringExplanation />
       </TabsContent>
     </Tabs>
   );

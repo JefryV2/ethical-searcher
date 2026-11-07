@@ -1,276 +1,167 @@
 
+// How the score is actually produced. This replaced an earlier page that
+// described a weighted "ethical scoring algorithm", quarterly reviews and an
+// ethics committee — none of which exist in this app. The score is a
+// deterministic evidence-coverage total, and this page shows its exact terms.
+
 import { Card } from "@/components/ui/card";
-import { 
-  Leaf, 
-  Users, 
-  Scale, 
-  ShieldCheck, 
-  Building, 
-  User, 
-  Lightbulb, 
-  Sparkles,
-  GlobeLock,
-  HeartHandshake,
-  Megaphone,
+import {
+  ShieldCheck,
+  Database,
   BookOpen,
-  Recycle
+  Globe,
+  FileSearch,
+  Scale,
+  Info,
+  Ban,
 } from 'lucide-react';
 
-interface ScoringExplanationProps {
-  entityType: 'company' | 'creator';
-}
+const BREAKDOWN = [
+  {
+    icon: <Database className="w-4 h-4 text-primary" />,
+    label: 'A Wikidata record exists for the entity',
+    points: '+20',
+    note: 'Identity resolved to a real item (Q-number) with a description.',
+  },
+  {
+    icon: <BookOpen className="w-4 h-4 text-primary" />,
+    label: 'A Wikipedia summary was read',
+    points: '+20',
+    note: 'The article summary is reachable and non-empty.',
+  },
+  {
+    icon: <Globe className="w-4 h-4 text-primary" />,
+    label: 'The official site answered',
+    points: '+15',
+    note: 'At least one page of the entity’s own site was fetched successfully.',
+  },
+  {
+    icon: <FileSearch className="w-4 h-4 text-primary" />,
+    label: 'A disclosure signal was found',
+    points: '+15',
+    note: 'Pages mention sponsorships, paid partnerships or advertising disclosure.',
+  },
+  {
+    icon: <FileSearch className="w-4 h-4 text-primary" />,
+    label: 'A sourcing signal was found',
+    points: '+10',
+    note: 'Pages cite sources, references or a methodology.',
+  },
+  {
+    icon: <FileSearch className="w-4 h-4 text-primary" />,
+    label: 'An operations signal was found',
+    points: '+15',
+    note: 'Pages publish impact, annual, sustainability or transparency reports.',
+  },
+  {
+    icon: <Scale className="w-4 h-4 text-primary" />,
+    label: 'A conflict/issue-response signal was found',
+    points: '+5',
+    note: 'Pages discuss funding, conflicts of interest, corrections or investigations.',
+  },
+];
 
-export const ScoringExplanation = ({ entityType }: ScoringExplanationProps) => {
-  // Different weighting based on entity type
-  const getMetrics = () => {
-    if (entityType === 'company') {
-      return [
-        {
-          icon: <Leaf className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />,
-          title: "Environmental Impact (30%)",
-          description: "Carbon footprint, resource usage, waste management, sustainability initiatives, and commitment to climate goals.",
-          submetrics: [
-            "Carbon emissions reduction (10%)",
-            "Sustainable resource management (8%)",
-            "Waste reduction and circular economy initiatives (7%)",
-            "Environmental policy enforcement (5%)"
-          ]
-        },
-        {
-          icon: <Users className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />,
-          title: "Social Responsibility (30%)",
-          description: "Labor practices, diversity and inclusion, community engagement, and human rights throughout supply chain.",
-          submetrics: [
-            "Fair labor practices and living wages (8%)",
-            "Diversity, equity & inclusion initiatives (7%)",
-            "Supply chain ethics and transparency (8%)",
-            "Community investment and impact (7%)"
-          ]
-        },
-        {
-          icon: <Scale className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />,
-          title: "Governance (25%)",
-          description: "Corporate structure, transparency, ethics policies, anti-corruption measures, and compliance with regulations.",
-          submetrics: [
-            "Leadership diversity and compensation ratios (5%)",
-            "Anti-corruption policies and implementation (7%)",
-            "Stakeholder engagement practices (5%)",
-            "Transparency in reporting and communication (8%)"
-          ]
-        },
-        {
-          icon: <Sparkles className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />,
-          title: "Innovation & Impact (15%)",
-          description: "Positive societal contributions, ethical innovation, product safety, and addressing global challenges.",
-          submetrics: [
-            "Ethical product development (5%)",
-            "Societal benefit of business model (5%)",
-            "Research & development focused on sustainability (5%)"
-          ]
-        }
-      ];
-    } else {
-      // Creator-specific metrics
-      return [
-        {
-          icon: <Megaphone className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />,
-          title: "Transparency & Disclosure (35%)",
-          description: "Openness about sponsorships, income sources, conflicts of interest, and affiliate relationships.",
-          submetrics: [
-            "Sponsorship disclosure compliance (12%)", 
-            "Financial relationship transparency (10%)",
-            "Affiliate link disclosure (8%)",
-            "Product receipt disclosure (5%)"
-          ]
-        },
-        {
-          icon: <BookOpen className="w-5 h-5 text-purple-500 shrink-0 mt-0.5" />,
-          title: "Content Integrity (25%)",
-          description: "Accuracy of information, research quality, correction of errors, and balance in presentation.",
-          submetrics: [
-            "Factual accuracy and sourcing (10%)",
-            "Editorial independence (8%)",
-            "Correction policy implementation (7%)"
-          ]
-        },
-        {
-          icon: <HeartHandshake className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />,
-          title: "Social Impact (20%)",
-          description: "Advocacy, charitable work, positive influence, and community building initiatives.",
-          submetrics: [
-            "Charitable giving and volunteering (8%)",
-            "Platform use for social good (7%)",
-            "Community building and support (5%)"
-          ]
-        },
-        {
-          icon: <Recycle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />,
-          title: "Environmental Advocacy (10%)",
-          description: "Promotion of sustainable practices, climate awareness, and personal environmental footprint.",
-          submetrics: [
-            "Promotion of sustainable products (4%)",
-            "Personal sustainability practices (3%)",
-            "Environmental education efforts (3%)"
-          ]
-        },
-        {
-          icon: <GlobeLock className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />,
-          title: "Audience Responsibility (10%)",
-          description: "Audience respect, data privacy, moderation policies, and handling of sensitive topics.",
-          submetrics: [
-            "Audience data privacy practices (4%)",
-            "Comment moderation and community guidelines (3%)",
-            "Responsible handling of sensitive topics (3%)"
-          ]
-        }
-      ];
-    }
-  };
+const BANDS = [
+  { range: '0–49', label: 'Sparse record', tone: 'score-low' },
+  { range: '50–69', label: 'Partial record', tone: 'score-mid' },
+  { range: '70–89', label: 'Well documented', tone: 'score-good' },
+  { range: '90–95', label: 'Extensive record', tone: 'score-good' },
+];
 
-  const metrics = getMetrics();
-
+export const ScoringExplanation = () => {
   return (
     <div className="space-y-6">
-      <div className="prose dark:prose-invert max-w-none">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <ShieldCheck className="text-primary" />
-          Ethics Scoring Methodology
-        </h2>
-        <p className="text-muted-foreground">
-          Our ethics scoring system is transparent and based on verifiable data sources.
-          Scores range from 0-100, with higher scores indicating better ethical practices.
-          Methodology is specifically tailored to {entityType === 'company' ? 'corporate' : 'content creator'} ethics.
-        </p>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            {entityType === 'company' ? (
-              <Building className="w-5 h-5 text-primary" />
-            ) : (
-              <User className="w-5 h-5 text-primary" />
-            )}
-            <h3 className="text-lg font-medium">
-              {entityType === 'company' ? 'Company' : 'Creator'} Score Components
-            </h3>
-          </div>
-          
-          <div className="space-y-5">
-            {metrics.map((metric, index) => (
-              <div key={index} className="space-y-3">
-                <div className="flex items-start gap-3">
-                  {metric.icon}
-                  <div>
-                    <p className="font-medium">{metric.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {metric.description}
-                    </p>
-                  </div>
-                </div>
-                <div className="pl-8 space-y-1">
-                  {metric.submetrics.map((submetric, subIndex) => (
-                    <p key={subIndex} className="text-xs text-muted-foreground flex items-center gap-1">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/70"></span>
-                      {submetric}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-        
-        <Card className="p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <Lightbulb className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-medium">How We Calculate Scores</h3>
-          </div>
-          
-          <div className="space-y-4 text-sm">
-            <p>
-              Our scoring system uses a weighted algorithm that evaluates multiple factors in each category. 
-              We update scores quarterly based on new information from:
-            </p>
-            
-            <ul className="space-y-2 list-disc pl-5">
-              {entityType === 'company' ? (
-                <>
-                  <li>Public corporate disclosures and sustainability reports</li>
-                  <li>Independent audits and certifications</li>
-                  <li>News sources and investigative journalism</li>
-                  <li>NGO and watchdog organization reports</li>
-                  <li>Academic and industry research</li>
-                  <li>Social media analysis and public sentiment</li>
-                </>
-              ) : (
-                <>
-                  <li>Content analysis across platforms</li>
-                  <li>Disclosure and transparency audits</li>
-                  <li>Fact-checking organization reports</li>
-                  <li>Public disclosure statements</li>
-                  <li>Community feedback and advocacy groups</li>
-                  <li>Independent ethics reviews</li>
-                </>
-              )}
-            </ul>
-            
-            <p className="font-medium pt-2">Score Interpretation:</p>
-            <div className="grid grid-cols-5 gap-1 text-center text-xs">
-              <div className="bg-red-100 dark:bg-red-950/30 p-2 rounded-md">
-                <p className="font-medium text-red-600 dark:text-red-400">0-29</p>
-                <p>Poor</p>
-              </div>
-              <div className="bg-orange-100 dark:bg-orange-950/30 p-2 rounded-md">
-                <p className="font-medium text-orange-600 dark:text-orange-400">30-49</p>
-                <p>Needs Work</p>
-              </div>
-              <div className="bg-amber-100 dark:bg-amber-950/30 p-2 rounded-md">
-                <p className="font-medium text-amber-600 dark:text-amber-400">50-69</p>
-                <p>Moderate</p>
-              </div>
-              <div className="bg-lime-100 dark:bg-lime-950/30 p-2 rounded-md">
-                <p className="font-medium text-lime-600 dark:text-lime-400">70-89</p>
-                <p>Strong</p>
-              </div>
-              <div className="bg-green-100 dark:bg-green-950/30 p-2 rounded-md">
-                <p className="font-medium text-green-600 dark:text-green-400">90-100</p>
-                <p>Exemplary</p>
-              </div>
-            </div>
-            
-            <p className="italic mt-4">
-              All scores are updated quarterly and reviewed by our ethics committee 
-              composed of industry experts and academics.
-            </p>
-          </div>
-        </Card>
-      </div>
-      
-      <div className="bg-secondary/20 p-5 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Open Source Methodology</h3>
-        <p className="text-sm mb-3">
-          Our scoring system's methodology is fully open source and available for 
-          public review and improvement. We believe in transparency as a key value.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <a 
-            href="https://github.com/ethicalscoring/methodology" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:underline"
-          >
-            View Github Repository
-          </a>
-          <a 
-            href="https://ethicalscoring.org/methodology" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:underline"
-          >
-            Read Detailed Documentation
-          </a>
+      <Card className="glass-card p-6 space-y-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-primary" />
+          <h2 className="ds-text-headline-sm">How this score is calculated</h2>
         </div>
+        <p className="ds-text-body-md text-muted-foreground max-w-3xl">
+          The number is <strong className="text-foreground">evidence coverage</strong>, a fixed
+          sum of what could be verified in public sources. There are no user-adjustable weights,
+          no editorial committee and no quarterly review — the same inputs always produce the
+          same score, and every input is listed on the record itself.
+        </p>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] items-start">
+        <Card className="glass-card p-5 space-y-1">
+          <h3 className="ds-text-title-sm mb-2">Score components</h3>
+          <ul className="divide-y divide-border">
+            {BREAKDOWN.map((item) => (
+              <li key={item.label} className="py-3 flex items-start gap-3">
+                <span className="mt-0.5 shrink-0">{item.icon}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="ds-text-body-sm font-medium">{item.label}</p>
+                  <p className="ds-text-body-sm text-muted-foreground">{item.note}</p>
+                </div>
+                <span className="ds-text-numeric-md text-primary shrink-0">{item.points}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="ds-text-body-sm text-muted-foreground pt-3">
+            The total is capped at <span className="ds-text-numeric-md">95</span> — a perfect 100
+            would imply every possible page was read, which no audit can claim.
+          </p>
+        </Card>
+
+        <div className="space-y-6">
+          <Card className="glass-card p-5 space-y-3">
+            <h3 className="ds-text-title-sm">What the bands mean</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {BANDS.map((band) => (
+                <div key={band.range} className="border border-border rounded-md p-3">
+                  <p className={`ds-text-numeric-md ${band.tone}`}>{band.range}</p>
+                  <p className="ds-text-body-sm text-muted-foreground">{band.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="ds-text-body-sm text-muted-foreground">
+              These describe how much material a reader can check — never whether the entity is
+              good or bad.
+            </p>
+          </Card>
+
+          <Card className="glass-card p-5 space-y-3">
+            <h3 className="ds-text-title-sm">Where the evidence comes from</h3>
+            <ul className="space-y-2 ds-text-body-sm text-muted-foreground">
+              <li>Wikidata — identity, description, official links</li>
+              <li>Wikipedia — summary, plus issue sections with section-level URLs</li>
+              <li>The entity's own site — landing page and disclosure-ish pages</li>
+              <li>Platform profiles linked from Wikidata</li>
+            </ul>
+            <p className="ds-text-body-sm text-muted-foreground">
+              No accounts, API keys or paid data. If a source cannot be read, the record says so
+              and the score stays lower.
+            </p>
+          </Card>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="glass-card p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <Info className="w-4 h-4 text-primary" />
+            <h3 className="ds-text-title-sm">The model analysis is separate</h3>
+          </div>
+          <p className="ds-text-body-sm text-muted-foreground">
+            The “Model analysis” tab runs MobileBERT-MNLI on the recorded evidence, entirely in
+            your browser. Those entailment scores never change the evidence-coverage number on
+            this page; the combined figure shown there is only a display aid.
+          </p>
+        </Card>
+
+        <Card className="glass-card p-5 space-y-2">
+          <div className="flex items-center gap-2">
+            <Ban className="w-4 h-4 score-mid" />
+            <h3 className="ds-text-title-sm">What this score is not</h3>
+          </div>
+          <p className="ds-text-body-sm text-muted-foreground">
+            It is not an ethics rating, a fact-check, or a prediction. A company can publish
+            detailed reports and still behave badly; a small creator can be ethical and publish
+            almost nothing. Read the sources before drawing conclusions.
+          </p>
+        </Card>
       </div>
     </div>
   );

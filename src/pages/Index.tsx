@@ -5,6 +5,7 @@ import { SearchResults } from '@/components/SearchResults';
 import { ExampleQueries } from '@/components/ExampleQueries';
 import { EntityData } from '@/services/ethicalDataService';
 import { lookupEntities, type BuiltEntity } from '@/services/lookupService';
+import { saveEvidenceSnapshots } from '@/services/evidenceStore';
 import { performFallbackSearch } from '@/services/localSearch';
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -27,6 +28,7 @@ const Index = () => {
   ) => {
     sessionStorage.setItem('searchResults', JSON.stringify(results));
     sessionStorage.setItem('lastSearchResults', JSON.stringify(results));
+    saveEvidenceSnapshots(built);
     setSearchResults(results);
     setEvidenceMap(Object.fromEntries(built.map((b) => [b.entity.id, b])));
     setFailedNotice(notice);
